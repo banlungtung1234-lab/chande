@@ -13,27 +13,17 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'database.json');
 
-// --- HÀM KHỞI TẠO DỮ LIỆU ---
+// --- 1. KHỞI TẠO CƠ SỞ DỮ LIỆU ---
 function initDatabase() {
     if (!fs.existsSync(DB_FILE)) {
         const adminPasswordHash = bcrypt.hashSync('admin123@', 10);
         const initialData = {
             users: [{
-                id: "admin-id",
-                username: "admin",
-                phone: "0123456789",
-                email: "admin@gmail.com",
-                password: adminPasswordHash,
-                displayName: "Hệ Thống Admin",
-                role: "admin",
-                isBanned: false,
-                banUntil: null,
-                friends: [],
-                blocks: [],
-                archives: []
+                id: "admin-id", username: "admin", phone: "0123456789", email: "admin@gmail.com",
+                password: adminPasswordHash, displayName: "Hệ Thống Admin", role: "admin",
+                isBanned: false, banUntil: null, friends: [], blocks: [], archives: []
             }],
-            messages: [],
-            friendRequests: []
+            messages: [], friendRequests: []
         };
         fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2));
     }
@@ -43,15 +33,15 @@ initDatabase();
 function readDB() { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
 function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2)); }
 
-// --- CẤU HÌNH MIDDLEWARE ---
+// --- 2. CẤU HÌNH MIDDLEWARE & SESSION ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const sessionMiddleware = session({
-    secret: 'cherry-blossom-secret-key-pro',
+    secret: 'cherry-blossom-secret-key-pro-v3',
     resave: false,
     saveUninitialized: true,
-    store: new MemoryStore({ checkPeriod: 86400000 }), // Ghi nhớ phiên và chống tràn RAM
+    store: new MemoryStore({ checkPeriod: 86400000 }), // Chống tràn RAM
     cookie: { maxAge: 24 * 60 * 60 * 1000 }
 });
 app.use(sessionMiddleware);
@@ -61,15 +51,15 @@ io.use((socket, next) => {
     sessionMiddleware(socket.request, socket.request.res || {}, next);
 });
 
-let onlineUsers = {}; // Bản đồ lưu trữ danh sách đang Online realtime
+let onlineUsers = {}; // Lưu trữ danh sách Online Realtime
 
-// --- CÁC ROUTE API AUTHENTICATION ---
+// --- 3. CÁC ĐƯỜNG DẪN API (ĐĂNG NHẬP/ĐĂNG KÝ) ---
 app.post('/api/register', (req, res) => {
     const { username, phone, email, password, confirmPassword } = req.body;
     
-    if (username.length < 4) return res.status(400).json({ msg: "Tên đăng nhập phải >= 4 ký tự!" });
+    if (username.length < 4) return res.status(400).json({ msg: "Tên đăng nhập trên 4 ký tự!" });
     if (!/^(0|\+84)[0-9]{8,9}$/.test(phone)) return res.status(400).json({ msg: "Số điện thoại không hợp lệ!" });
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return res.status(400).json({ msg: "Mật khẩu cần ít nhất 1 ký tự đặc biệt!" });
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return res.status(400).json({ msg: "Mật khẩu cần quá yếu!" });
     if (password !== confirmPassword) return res.status(400).json({ msg: "Mật khẩu xác nhận không khớp!" });
 
     const db = readDB();
@@ -80,15 +70,13 @@ app.post('/api/register', (req, res) => {
         id: 'user_' + Date.now(),
         username, phone, email: email || "",
         password: bcrypt.hashSync(password, 10),
-        displayName: "",
-        role: "user",
+        displayName: "", role: "user",
         isBanned: false, banUntil: null,
         friends: [], blocks: [], archives: []
     };
-    db.users.push(newUser);
-    writeDB(db);
+    db.users.push(newUser); writeDB(db);
     req.session.userId = newUser.id;
-    res.json({ msg: "Đăng ký thành công!", step: "setup-profile" });
+    res.json({ msg: "Đăng ký thành công!", step: "setupProfile" });
 });
 
 app.post('/api/setup-profile', (req, res) => {
@@ -96,9 +84,8 @@ app.post('/api/setup-profile', (req, res) => {
     const { displayName } = req.body;
     const db = readDB(); 
     const user = db.users.find(u => u.id === req.session.userId);
-    if (!user || user.username === displayName) return res.status(400).json({ msg: "Lỗi thiết lập tên hiển thị!" });
-    user.displayName = displayName; 
-    writeDB(db);
+    if (!user || user.username === displayName) return res.status(400).json({ msg: "Tên hiển thị không được trùng tên đăng nhập!" });
+    user.displayName = displayName; writeDB(db);
     res.json({ msg: "Cập nhật thành công!", role: user.role });
 });
 
@@ -113,7 +100,9 @@ app.post('/api/login', (req, res) => {
     if (user.isBanned) return res.status(403).json({ msg: "Tài khoản của bạn hiện đang bị khóa!" });
     
     req.session.userId = user.id;
-    res.json({ msg: "Đăng nhập thành công!", role: user.role, needProfile: !user.displayName });
+    // Kiểm tra xem đã thiết lập tên hiển thị chưa
+    const needProfile = (!user.displayName || user.displayName.trim() === "");
+    res.json({ msg: "Đăng nhập thành công!", role: user.role, needProfile });
 });
 
 app.post('/api/logout', (req, res) => {
@@ -125,55 +114,48 @@ app.get('/api/me', (req, res) => {
     if (!req.session.userId) return res.status(401).json({ msg: "Chưa đăng nhập" });
     const db = readDB();
     const user = db.users.find(u => u.id === req.session.userId);
-    if(!user) return res.status(404).json({ msg: "Lỗi" });
+    if(!user) return res.status(404).json({ msg: "Lỗi dữ liệu tài khoản" });
     res.json({ id: user.id, username: user.username, displayName: user.displayName, phone: user.phone, email: user.email, role: user.role });
 });
 
-// --- LOGIC REALTIME SOCKET.IO ---
+// --- 4. HỆ THỐNG GIAO TIẾP REALTIME (SOCKET.IO) ---
 io.on('connection', (socket) => {
     const session = socket.request.session;
     if (!session || !session.userId) return;
     
     const currentUserId = session.userId;
-    onlineUsers[currentUserId] = socket.id; // Đăng ký socket ID khi online
+    onlineUsers[currentUserId] = socket.id;
 
-    // Phát tín hiệu Online ngay lập tức cho toàn hệ thống biết
+    // Phát tín hiệu Online
     io.emit('userStatusChange', { userId: currentUserId, status: 'online' });
 
     socket.on('initData', () => sendUserDataUpdate(currentUserId, socket));
 
-    // Trạng thái đang gõ phím
+    // Xử lý Gõ Phím
     socket.on('typing', (toUserId) => { if (onlineUsers[toUserId]) io.to(onlineUsers[toUserId]).emit('userTyping', currentUserId); });
     socket.on('stopTyping', (toUserId) => { if (onlineUsers[toUserId]) io.to(onlineUsers[toUserId]).emit('userStoppedTyping', currentUserId); });
 
-    // Gửi tin nhắn đồng bộ tức thì
+    // Xử lý Tin Nhắn
     socket.on('sendMessage', ({ toUserId, text }) => {
         const db = readDB();
         const sender = db.users.find(u => u.id === currentUserId);
         const receiver = db.users.find(u => u.id === toUserId);
         if (!sender || !receiver) return;
-        if (!sender.friends.includes(toUserId) && sender.role !== 'admin') return;
+        if (!sender.friends.includes(toUserId) && sender.role !== 'admin') return; // Chặn nếu không phải bạn bè (trừ admin)
 
         const msgObj = { 
-            id: 'msg_' + Date.now(), 
-            from: currentUserId, 
-            to: toUserId, 
-            text, 
-            timestamp: new Date().toISOString(),
-            isEdited: false,
-            isRecalled: false
+            id: 'msg_' + Date.now(), from: currentUserId, to: toUserId, text, 
+            timestamp: new Date().toISOString(), isEdited: false, isRecalled: false
         };
-        db.messages.push(msgObj);
-        writeDB(db);
+        db.messages.push(msgObj); writeDB(db);
         
-        socket.emit('receiveMessage', msgObj); // Phản hồi ngay lập tức cho người gửi
+        socket.emit('receiveMessage', msgObj);
         if (onlineUsers[toUserId]) {
             io.to(onlineUsers[toUserId]).emit('receiveMessage', msgObj);
             io.to(onlineUsers[toUserId]).emit('msgPopupNotification', { fromName: sender.displayName, text });
         }
     });
 
-    // Chỉnh sửa tin nhắn
     socket.on('editMessage', ({ msgId, newText }) => {
         const db = readDB();
         const msg = db.messages.find(m => m.id === msgId && m.from === currentUserId);
@@ -184,37 +166,35 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Thu hồi tin nhắn
     socket.on('recallMessage', (msgId) => {
         const db = readDB();
         const msg = db.messages.find(m => m.id === msgId && m.from === currentUserId);
         if(msg && !msg.isRecalled) { 
-            msg.isRecalled = true; msg.text = "Tin nhắn đã được thu hồi"; writeDB(db); 
+            msg.isRecalled = true; msg.text = "🚫 Tin nhắn đã được thu hồi"; writeDB(db); 
             io.to(onlineUsers[currentUserId]).emit('messageUpdated', msg);
             if(onlineUsers[msg.to]) io.to(onlineUsers[msg.to]).emit('messageUpdated', msg);
         }
     });
 
-    // Cập nhật Profile cá nhân công khai
+    // Cập nhật Profile Cá nhân
     socket.on('updateMyProfile', (data, callback) => {
         const db = readDB(); const user = db.users.find(u => u.id === currentUserId);
         if (!user) return;
-        if (!/^(0|\+84)[0-9]{8,9}$/.test(data.phone)) return callback({ success: false, msg: "Số điện thoại sai!" });
+        if (!/^(0|\+84)[0-9]{8,9}$/.test(data.phone)) return callback({ success: false, msg: "SĐT sai!" });
         user.displayName = data.displayName; user.phone = data.phone; user.email = data.email;
         writeDB(db); callback({ success: true, msg: "Cập nhật hồ sơ thành công!" });
         sendUserDataUpdate(currentUserId, socket);
     });
 
-    // Đổi mật khẩu nội bộ
     socket.on('changePasswordInternal', ({ oldPass, newPass }, callback) => {
-        if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPass)) return callback({ success: false, msg: "Mật khẩu mới phải mạnh hơn mật khẩu cũ!" });
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPass)) return callback({ success: false, msg: "Mật khẩu mới quá yếu!" });
         const db = readDB(); const user = db.users.find(u => u.id === currentUserId);
         if (user && bcrypt.compareSync(oldPass, user.password)) {
             user.password = bcrypt.hashSync(newPass, 10); writeDB(db); callback({ success: true, msg: "Thay đổi mật khẩu thành công!" });
         } else callback({ success: false, msg: "Mật khẩu cũ không chính xác!" });
     });
 
-    // Tìm kiếm kết bạn
+    // Tính năng Xã hội (Kết bạn, Lưu trữ, Chặn)
     socket.on('searchUser', (query) => {
         const db = readDB();
         const results = db.users.filter(u => u.id !== currentUserId && u.role !== 'admin' && (u.username.includes(query) || u.phone.includes(query))).map(u => ({ id: u.id, displayName: u.displayName || u.username, username: u.username }));
@@ -262,7 +242,7 @@ io.on('connection', (socket) => {
         if (idx > -1) user.archives.splice(idx, 1); else user.archives.push(targetId); writeDB(db); sendUserDataUpdate(currentUserId, socket);
     });
 
-    // --- CỔNG QUẢN TRỊ ADMIN (ĐÃ ĐỒNG BỘ 100%) ---
+    // --- 5. CỔNG QUẢN TRỊ ADMIN ---
     socket.on('verifyAdminAuth', (pass, callback) => {
         const db = readDB();
         const admin = db.users.find(u => u.id === currentUserId && u.role === 'admin');
@@ -270,20 +250,12 @@ io.on('connection', (socket) => {
         else callback({ success: false, msg: "Mật khẩu quản trị cấp 2 sai!" });
     });
 
-    // VÁ LỖI CHÍNH: Đồng bộ cột ON/OFF trên giao diện Dashboard Admin
     socket.on('adminGetUsers', () => {
         const db = readDB();
         if (db.users.find(u => u.id === currentUserId && u.role === 'admin')) {
             const syncAdminListData = db.users.map(u => ({
-                id: u.id,
-                username: u.username,
-                phone: u.phone,
-                email: u.email,
-                displayName: u.displayName,
-                role: u.role,
-                isBanned: u.isBanned,
-                banUntil: u.banUntil,
-                isOnline: !!onlineUsers[u.id] // <--- ĐỒNG BỘ TRẠNG THÁI CHO KHUNG ADMIN
+                id: u.id, username: u.username, phone: u.phone, email: u.email, displayName: u.displayName, role: u.role, isBanned: u.isBanned, banUntil: u.banUntil,
+                isOnline: !!onlineUsers[u.id] // ĐỒNG BỘ TRẠNG THÁI ON/OFF CHO ADMIN
             }));
             socket.emit('adminUsersList', syncAdminListData);
         }
@@ -314,10 +286,9 @@ io.on('connection', (socket) => {
         const db = readDB(); if (db.users.find(u => u.id === currentUserId && u.role === 'admin')) {
             const target = db.users.find(u => u.id === targetId && u.role !== 'admin');
             if(target) { 
-                target.isBanned = true; 
-                target.banUntil = durationMinutes === 'infinite' ? null : new Date(Date.now() + parseInt(durationMinutes) * 60 * 1000).toISOString();
+                target.isBanned = true; target.banUntil = durationMinutes === 'infinite' ? null : new Date(Date.now() + parseInt(durationMinutes) * 60 * 1000).toISOString();
                 writeDB(db); io.emit('adminActionDone'); 
-                if(onlineUsers[targetId]) io.to(onlineUsers[targetId]).emit('forceLogout', "Tài khoản của bạn đã bị Admin tạm khóa.");
+                if(onlineUsers[targetId]) io.to(onlineUsers[targetId]).emit('forceLogout', "Tài khoản của bạn đã bị Hệ thống tạm khóa.");
             }
         }
     });
@@ -332,40 +303,34 @@ io.on('connection', (socket) => {
     socket.on('adminDeleteUser', (targetId) => {
         const db = readDB(); if (db.users.find(u => u.id === currentUserId && u.role === 'admin')) {
             db.users = db.users.filter(u => u.id !== targetId || u.role === 'admin'); writeDB(db); io.emit('adminActionDone');
-            if(onlineUsers[targetId]) io.to(onlineUsers[targetId]).emit('forceLogout', "Tài khoản này đã bị xóa bỏ hoàn toàn.");
+            if(onlineUsers[targetId]) io.to(onlineUsers[targetId]).emit('forceLogout', "Tài khoản này đã bị xóa bỏ.");
         }
     });
 
     socket.on('disconnect', () => {
-        // Gỡ bỏ ID khỏi bản đồ trực tuyến khi thoát mạng
         delete onlineUsers[currentUserId];
         io.emit('userStatusChange', { userId: currentUserId, status: 'offline' });
     });
 });
 
-// VÁ LỖI PHỤ: Đồng bộ dấu chấm Xanh hoạt động cho danh sách Bạn bè khi vừa tải trang
+// Hàm gộp toàn bộ dữ liệu gửi về Client
 function sendUserDataUpdate(userId, socketTarget) {
     const db = readDB();
     const user = db.users.find(u => u.id === userId);
     if (!user) return;
     
-    // Gắn thêm thuộc tính isOnline tức thời vào mảng bạn bè trước khi gửi cho Client
+    // Đồng bộ trạng thái chấm xanh
     const syncedFriendsList = db.users
         .filter(u => user.friends.includes(u.id) || u.role === 'admin')
         .map(u => ({
-            id: u.id,
-            username: u.username,
-            displayName: u.displayName || u.username,
-            phone: u.phone,
-            email: u.email,
-            role: u.role,
-            isOnline: !!onlineUsers[u.id], // <--- KIỂM TRA ĐANG TRỰC TUYẾN
+            id: u.id, username: u.username, displayName: u.displayName || u.username, phone: u.phone, email: u.email, role: u.role,
+            isOnline: !!onlineUsers[u.id], 
             isBlocked: user.blocks ? user.blocks.includes(u.id) : false,
             isArchived: user.archives ? user.archives.includes(u.id) : false
         }));
     
     socketTarget.emit('userDataPackage', {
-        friends: syncedFriendsList, // Gửi mảng bạn bè đã được đồng bộ trạng thái mạng
+        friends: syncedFriendsList,
         messages: db.messages.filter(m => m.from === userId || m.to === userId),
         requests: db.friendRequests.filter(r => r.to === userId),
         blocks: user.blocks || [],
@@ -373,4 +338,4 @@ function sendUserDataUpdate(userId, socketTarget) {
     });
 }
 
-server.listen(PORT, () => console.log(`Server Pro (Synced) running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Cherry Server Pro running flawlessly on port ${PORT}`));
