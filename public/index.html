@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ra Dai</title>
-    <!-- Tailwind CSS -->
+    <title>Tủ Lạnh</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Socket.io -->
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* Nâng cấp Background tĩnh lặng, mượt mà */
+        /* Hiệu ứng nền hồng tĩnh lặng chuyển động mượt mà */
         body { 
             background: linear-gradient(135deg, #ffe3ec 0%, #ffb3c6 50%, #ff8fa3 100%); 
             background-size: 400% 400%; 
@@ -22,18 +20,24 @@
             100% { background-position: 0% 50%; } 
         }
         
-        /* Hiệu ứng kính sang trọng (Glassmorphism) */
-        .sakura-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        /* Lớp phủ Canvas hiệu ứng hoa rơi */
+        .sakura-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        
+        /* Phong cách kính mờ Glassmorphism cao cấp */
         .glassmorphism { 
             background: rgba(255, 255, 255, 0.85); 
             backdrop-filter: blur(16px); 
             border: 1px solid rgba(255, 182, 193, 0.5); 
             box-shadow: 0 8px 32px 0 rgba(255, 105, 180, 0.15); 
+            transition: all 0.3s ease; 
+        }
+        .glassmorphism:hover { 
+            box-shadow: 0 12px 40px 0 rgba(255, 105, 180, 0.25); 
         }
         .zoom-hover { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); } 
         .zoom-hover:hover { transform: scale(1.02); }
         
-        /* Thanh cuộn hiện đại */
+        /* Tùy biến thanh cuộn Scrollbar mượt mà mảnh mai */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255, 182, 193, 0.8); border-radius: 10px; }
@@ -42,186 +46,211 @@
 </head>
 <body class="h-screen font-sans antialiased text-gray-800 relative">
 
-    <!-- LỚP PHỦ HOA ANH ĐÀO 3D -->
     <canvas id="sakuraCanvas" class="sakura-canvas"></canvas>
 
-    <!-- HỆ THỐNG LOADING & CẢNH BÁO -->
-    <div id="globalLoading" class="fixed inset-0 bg-pink-100/90 z-[999] flex flex-col justify-center items-center transition-opacity duration-300">
+    <div id="globalLoading" class="fixed inset-0 bg-pink-100/95 z-[999] flex flex-col justify-center items-center transition-opacity duration-300">
         <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-opacity-70 mb-4"></div>
-        <p class="text-pink-600 font-bold animate-pulse tracking-widest uppercase">Đang tải...</p>
+        <p class="text-pink-600 font-bold animate-pulse tracking-widest uppercase">Đang đồng bộ...</p>
     </div>
 
-    <!-- Alert Modal Custom (Thay thế Alert mặc định) -->
     <div id="customAlertModal" class="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
-        <div class="glassmorphism p-6 rounded-3xl max-w-sm w-full mx-4 transform scale-95 transition-transform duration-300 relative" id="customAlertBox">
+        <div class="glassmorphism p-6 rounded-3xl max-w-sm w-full mx-4 transform scale-95 transition-transform duration-300" id="customAlertBox">
             <div class="text-center">
-                <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-pink-100 mb-4 shadow-inner"><span class="text-3xl">🌸</span></div>
-                <h3 class="text-xl font-extrabold text-pink-700 mb-2 uppercase tracking-wide" id="customAlertTitle">Thông báo</h3>
-                <p class="text-sm text-gray-700 mb-6 font-medium leading-relaxed" id="customAlertMsg">Nội dung</p>
-                <button onclick="closeCustomAlert()" class="w-full bg-gradient-to-r from-pink-400 to-pink-500 text-white font-bold py-3 rounded-xl hover:shadow-lg transition transform active:scale-95">Đã Hiểu</button>
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-pink-100 mb-4 shadow-inner"><span class="text-4xl">🌸</span></div>
+                <h3 class="text-xl font-black text-pink-700 mb-2 uppercase tracking-wide" id="customAlertTitle">Thông báo</h3>
+                <p class="text-sm text-gray-700 mb-6 font-medium leading-relaxed" id="customAlertMsg">Nội dung thông báo</p>
+                <button onclick="closeCustomAlert()" class="w-full bg-gradient-to-r from-pink-400 to-pink-500 text-white font-black py-3.5 rounded-xl hover:shadow-lg transition">ĐỒNG Ý</button>
             </div>
         </div>
     </div>
 
-    <!-- Popup Mini góc trên -->
-    <div id="popupAlert" class="fixed top-5 left-1/2 -translate-x-1/2 glassmorphism px-6 py-3 rounded-full shadow-2xl z-[900] hidden transform transition-all duration-300 scale-95 opacity-0 flex items-center space-x-3 max-w-md w-max border border-pink-200">
-        <span class="text-xl animate-bounce">🔔</span>
+    <div id="popupAlert" class="fixed top-6 left-1/2 -translate-x-1/2 glassmorphism px-6 py-3.5 rounded-full shadow-2xl z-[900] hidden transform transition-all duration-300 scale-95 opacity-0 flex items-center space-x-3 max-w-md w-max border border-pink-200">
+        <span class="text-2xl animate-bounce">💬</span>
         <div class="flex-1 pr-4">
-            <h4 id="popupTitle" class="font-bold text-pink-600 text-sm leading-tight">Thông báo</h4>
-            <p id="popupContent" class="text-gray-700 text-xs font-medium truncate w-48">Nội dung tin nhắn...</p>
+            <h4 id="popupTitle" class="font-bold text-pink-600 text-sm">Tin nhắn mới</h4>
+            <p id="popupContent" class="text-gray-700 text-xs font-medium truncate w-48">Nội dung...</p>
         </div>
-        <button onclick="closePopup()" class="text-gray-400 hover:text-red-500 text-lg font-bold">✕</button>
+        <button onclick="closePopup()" class="text-gray-400 hover:text-red-500 text-lg font-black">✕</button>
     </div>
 
-    <!-- KHU VỰC 1: XÁC THỰC TÀI KHOẢN (ĐĂNG NHẬP/ĐĂNG KÝ) -->
     <div id="authContainer" class="h-full flex items-center justify-center p-4 relative z-10">
         
-        <!-- Màn hình Đăng Nhập -->
         <div id="loginCard" class="glassmorphism w-full max-w-md p-8 rounded-[2rem] shadow-2xl zoom-hover hidden">
-            <div class="text-center mb-8"><span class="text-5xl block mb-2">🌸</span><h2 class="text-3xl font-extrabold text-pink-600 tracking-wider">ĐĂNG NHẬP</h2></div>
+            <div class="text-center mb-8">
+                <span class="text-6xl block mb-2">🌸</span>
+                <h2 class="text-3xl font-black text-pink-600 tracking-wider">RA DAI</h2>
+            </div>
             <form id="loginForm" class="space-y-5">
                 <div>
-                    <label class="block text-xs font-bold text-pink-700 mb-1 ml-1 uppercase">Tài khoản hoặc SĐT</label>
-                    <input type="text" id="loginKey" required class="w-full px-5 py-3 rounded-2xl border-2 border-pink-200 bg-white/70 focus:outline-none focus:border-pink-400 transition font-medium">
+                    <label class="block text-xs font-bold text-pink-700 mb-1 ml-1 uppercase">Tài khoản hoặc Số điện thoại</label>
+                    <input type="text" id="loginKey" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 bg-white/70 focus:outline-none focus:border-pink-400 transition font-medium">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-pink-700 mb-1 ml-1 uppercase">Mật khẩu</label>
                     <div class="relative">
-                        <input type="password" id="loginPassword" required class="w-full px-5 py-3 rounded-2xl border-2 border-pink-200 bg-white/70 focus:outline-none focus:border-pink-400 transition font-medium">
+                        <input type="password" id="loginPassword" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 bg-white/70 focus:outline-none focus:border-pink-400 transition font-medium">
                         <button type="button" onclick="togglePassView('loginPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button>
                     </div>
                 </div>
                 <div class="flex items-center justify-between text-xs px-1">
-                    <label class="flex items-center space-x-2 text-pink-800 cursor-pointer"><input type="checkbox" class="w-4 h-4 rounded text-pink-500 focus:ring-pink-400"><span class="font-medium">Ghi nhớ tôi</span></label>
+                    <label class="flex items-center space-x-2 text-pink-800 cursor-pointer">
+                        <input type="checkbox" class="w-4 h-4 rounded text-pink-500 focus:ring-pink-400">
+                        <span class="font-bold">Ghi nhớ</span>
+                    </label>
                     <button type="button" onclick="switchAuthView('forgot')" class="text-pink-600 font-bold hover:text-pink-800 transition">Quên mật khẩu?</button>
                 </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-pink-400 to-pink-500 text-white font-black py-3.5 rounded-2xl shadow-xl hover:shadow-pink-500/30 transform hover:-translate-y-0.5 transition mt-4 text-lg">VÀO NHẮN TIN</button>
+                <button type="submit" class="w-full bg-gradient-to-r from-pink-400 to-pink-500 text-white font-black py-4 rounded-2xl shadow-xl hover:shadow-pink-500/30 transform hover:-translate-y-1 transition mt-4 text-lg">ĐĂNG NHẬP</button>
             </form>
             <p class="text-center text-sm text-gray-600 mt-6 font-medium">Chưa có tài khoản? <button onclick="switchAuthView('register')" class="text-pink-600 font-black hover:underline">Đăng ký ngay</button></p>
         </div>
 
-        <!-- Màn hình Đăng Ký (Kèm cảnh báo Regex) -->
         <div id="registerCard" class="glassmorphism w-full max-w-md p-8 rounded-[2rem] shadow-2xl zoom-hover hidden">
-            <h2 class="text-2xl font-extrabold text-center text-pink-600 mb-6 uppercase tracking-wider">Tạo Tài Khoản Mới</h2>
-            <form id="registerForm" class="space-y-3">
-                <div><label class="block text-[10px] font-bold text-pink-700 mb-1 ml-1 uppercase">Tên đăng nhập tối thiểu 4 ký tự.</label><input type="text" id="regUsername" required class="w-full px-4 py-2.5 rounded-xl border-2 border-pink-200 bg-white/70 focus:outline-none focus:border-pink-400 transition"></div>
-                <div><label class="block text-[10px] font-bold text-pink-700 mb-1 ml-1 uppercase">Nhập SĐT.</label><input type="text" id="regPhone" required class="w-full px-4 py-2.5 rounded-xl border-2 border-pink-200 bg-white/70 focus:outline-none focus:border-pink-400 transition"></div>
-                <div><label class="block text-[10px] font-bold text-pink-700 mb-1 ml-1 uppercase">Mật khẩu mạnh.</label><div class="relative"><input type="password" id="regPassword" required class="w-full px-4 py-2.5 rounded-xl border-2 border-pink-200 bg-white/70"><button type="button" onclick="togglePassView('regPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-pink-500 font-bold bg-white/80 px-2 py-0.5 rounded">Hiện</button></div></div>
-                <div><label class="block text-[10px] font-bold text-pink-700 mb-1 ml-1 uppercase">Xác nhận mật khẩu.</label><div class="relative"><input type="password" id="regConfirmPassword" required class="w-full px-4 py-2.5 rounded-xl border-2 border-pink-200 bg-white/70"><button type="button" onclick="togglePassView('regConfirmPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-pink-500 font-bold bg-white/80 px-2 py-0.5 rounded">Hiện</button></div></div>
-                <button type="submit" class="w-full bg-gradient-to-r from-pink-400 to-pink-500 text-white font-black py-3 rounded-xl shadow-lg mt-4 hover:shadow-pink-500/30 transition">ĐĂNG KÝ NGAY</button>
+            <h2 class="text-2xl font-black text-center text-pink-600 mb-6 uppercase tracking-wider">Tạo Tài Khoản Mới</h2>
+            <form id="registerForm" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-pink-700 mb-1 ml-1 uppercase">Tên đăng nhập</label>
+                    <input type="text" id="regUsername" required class="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white/70 focus:outline-none focus:border-pink-400 transition font-medium">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-pink-700 mb-1 ml-1 uppercase">Số điện thoại</label>
+                    <input type="text" id="regPhone" required class="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white/70 focus:outline-none focus:border-pink-400 transition font-medium">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-pink-700 mb-1 ml-1 uppercase">Mật khẩu</label>
+                    <div class="relative">
+                        <input type="password" id="regPassword" required class="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white/70 font-medium focus:border-pink-400 outline-none">
+                        <button type="button" onclick="togglePassView('regPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-pink-500 font-bold bg-white/80 px-2 py-1 rounded">Hiện</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-pink-700 mb-1 ml-1 uppercase">Xác nhận lại mật khẩu</label>
+                    <div class="relative">
+                        <input type="password" id="regConfirmPassword" required class="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white/70 font-medium focus:border-pink-400 outline-none">
+                        <button type="button" onclick="togglePassView('regConfirmPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-pink-500 font-bold bg-white/80 px-2 py-1 rounded">Hiện</button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-pink-400 to-pink-500 text-white font-black py-3.5 rounded-xl shadow-lg mt-4 hover:shadow-pink-500/30 transition transform hover:-translate-y-1">ĐĂNG KÝ NGAY</button>
             </form>
-            <p class="text-center text-xs text-gray-600 mt-4 font-medium">Đã có tài khoản? <button onclick="switchAuthView('login')" class="text-pink-600 font-bold hover:underline">Đăng nhập</button></p>
+            <p class="text-center text-xs text-gray-600 mt-5 font-medium">Đã có tài khoản rồi? <button onclick="switchAuthView('login')" class="text-pink-600 font-bold hover:underline">Đăng nhập</button></p>
         </div>
 
-        <!-- Màn hình Quên Mật Khẩu -->
         <div id="forgotCard" class="glassmorphism w-full max-w-md p-8 rounded-[2rem] shadow-2xl zoom-hover hidden">
-            <h2 class="text-2xl font-extrabold text-center text-pink-600 mb-2 uppercase tracking-wider">Tìm Lại Mật Khẩu</h2>
+            <h2 class="text-2xl font-black text-center text-pink-600 mb-2 uppercase tracking-wider">Tìm Lại Mật Khẩu</h2>
             <form id="forgotForm" class="space-y-4 mt-6">
-                <div><label class="block text-xs font-bold text-pink-700 mb-1 ml-1">Tên đăng nhập</label><input type="text" id="forgotUsername" required class="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white/70"></div>
-                <div><label class="block text-xs font-bold text-pink-700 mb-1 ml-1">SĐT đăng ký</label><input type="text" id="forgotPhone" required class="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white/70"></div>
-                <div><label class="block text-xs font-bold text-pink-700 mb-1 ml-1">Mật khẩu MỚI</label><input type="password" id="forgotNewPassword" required class="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white/70"></div>
-                <button type="submit" class="w-full bg-pink-500 text-white font-black py-3 rounded-xl shadow-lg hover:bg-pink-600">ĐẶT LẠI MẬT KHẨU</button>
+                <div><label class="block text-xs font-bold text-pink-700 mb-1 ml-1">Tên đăng nhập hệ thống</label><input type="text" id="forgotUsername" required class="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white/70 outline-none focus:border-pink-400"></div>
+                <div><label class="block text-xs font-bold text-pink-700 mb-1 ml-1">Số điện thoại đã đăng ký</label><input type="text" id="forgotPhone" required class="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white/70 outline-none focus:border-pink-400"></div>
+                <div><label class="block text-xs font-bold text-pink-700 mb-1 ml-1">Mật khẩu mới</label><input type="password" id="forgotNewPassword" required class="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white/70 outline-none focus:border-pink-400"></div>
+                <button type="submit" class="w-full bg-pink-500 text-white font-black py-3.5 rounded-xl shadow-lg hover:bg-pink-600">ĐẶT LẠI MẬT KHẨU</button>
             </form>
-            <button onclick="switchAuthView('login')" class="w-full mt-4 text-center text-sm font-bold text-gray-500 hover:text-pink-600">← Quay lại Đăng Nhập</button>
+            <button onclick="switchAuthView('login')" class="w-full mt-4 text-center text-sm font-bold text-gray-500 hover:text-pink-600">← Quay lại màn hình Đăng Nhập</button>
         </div>
 
-        <!-- Màn hình Thiết lập Tên -->
         <div id="setupProfileCard" class="glassmorphism w-full max-w-md p-8 rounded-[2rem] shadow-2xl zoom-hover hidden">
-            <h2 class="text-2xl font-extrabold text-center text-pink-600 mb-2 uppercase">Bước Cuối Cùng!</h2>
-            <p class="text-xs text-center text-gray-500 mb-5">Cho mọi người biết bạn là ai nhé</p>
-            <form id="setupProfileForm" class="space-y-4">
-                <div><label class="block text-xs font-bold text-pink-700 mb-1 ml-1">Tên hiển thị (Nickname)</label><input type="text" id="setupDisplayName" required class="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white/70 text-center font-bold text-lg text-pink-600"></div>
-                <button type="submit" class="w-full bg-pink-500 text-white font-black py-3 rounded-xl shadow-lg hover:bg-pink-600">HOÀN TẤT & VÀO CHAT</button>
+            <h2 class="text-2xl font-black text-center text-pink-600 mb-2 uppercase">Bước Cuối Cùng!</h2>
+            <p class="text-xs text-center text-gray-500 mb-6 font-medium">Hãy tạo cho mình một biệt danh (Nickname)</p>
+            <form id="setupProfileForm" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold text-pink-700 mb-1 ml-1">Tên hiển thị công khai</label>
+                    <input type="text" id="setupDisplayName" required class="w-full px-4 py-4 rounded-xl border-2 border-pink-200 bg-white/70 text-center font-black text-xl text-pink-600 focus:outline-none focus:border-pink-400 transition shadow-inner">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-pink-400 to-pink-500 text-white font-black py-4 rounded-xl shadow-lg hover:shadow-pink-500/40 transform hover:-translate-y-1 transition">HOÀN TẤT</button>
             </form>
         </div>
     </div>
 
-    <!-- KHU VỰC 2: GIAO DIỆN CHAT NGƯỜI DÙNG CHUẨN PRO -->
     <div id="appContainer" class="h-full hidden flex flex-col md:flex-row p-4 gap-4 max-w-7xl mx-auto z-20 relative">
-        <!-- Cột trái: Sidebar -->
-        <div class="w-full md:w-80 flex flex-col gap-4">
+        
+        <div class="w-full md:w-[340px] flex flex-col gap-4">
             
-            <!-- Hồ sơ cá nhân -->
             <div class="glassmorphism p-5 rounded-[2rem] shadow-lg flex items-center justify-between border border-pink-100 group">
-                <div class="flex items-center space-x-3 cursor-pointer" onclick="openMyProfileModal()">
-                    <div class="w-12 h-12 bg-gradient-to-br from-pink-300 to-pink-500 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-inner">🌸</div>
+                <div class="flex items-center space-x-4 cursor-pointer" onclick="openMyProfileModal()">
+                    <div class="w-14 h-14 bg-gradient-to-br from-pink-300 to-pink-500 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-inner transform group-hover:scale-105 transition">🌸</div>
                     <div>
-                        <h3 id="meDisplayName" class="font-black text-pink-700 leading-tight">Name</h3>
-                        <p id="meUsername" class="text-[10px] text-pink-500 font-medium">@user</p>
-                        <p class="text-[9px] text-blue-500 font-bold mt-0.5 group-hover:underline">✎ Chỉnh sửa hồ sơ</p>
+                        <h3 id="meDisplayName" class="font-black text-pink-700 text-lg leading-tight">Name</h3>
+                        <p id="meUsername" class="text-xs text-pink-500 font-bold">@user</p>
+                        <p class="text-[10px] text-blue-500 font-bold mt-1 group-hover:underline">Thiết lập hồ sơ cá nhân</p>
                     </div>
                 </div>
-                <button onclick="handleLogout()" class="w-10 h-10 bg-white/50 rounded-full flex items-center justify-center text-red-500 font-bold hover:bg-red-500 hover:text-white transition shadow-sm" title="Đăng xuất">⎋</button>
+                <button onclick="handleLogout()" class="w-10 h-10 bg-white/50 rounded-full flex items-center justify-center text-red-500 font-black hover:bg-red-500 hover:text-white transition shadow-sm" title="Đăng xuất khỏi tài khoản">⎋</button>
             </div>
 
-            <!-- Tìm kiếm -->
             <div class="glassmorphism p-5 rounded-3xl shadow-lg">
-                <h4 class="text-xs font-extrabold text-pink-700 mb-3 uppercase tracking-wider flex items-center"><span class="mr-2">🔍</span> Tìm bạn bè</h4>
-                <div class="flex space-x-2"><input type="text" id="searchBar" placeholder="SĐT hoặc Username..." class="w-full text-xs px-4 py-2.5 rounded-xl border border-pink-200 bg-white/50 focus:outline-none focus:bg-white"><button onclick="triggerSearch()" class="text-xs bg-pink-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md hover:bg-pink-600">Tìm</button></div>
-                <div id="searchResultsArea" class="mt-3 max-h-32 overflow-y-auto space-y-1.5 custom-scrollbar"></div>
+                <h4 class="text-xs font-black text-pink-700 mb-3 uppercase tracking-wider flex items-center"><span class="mr-2 text-lg">🔍</span> Tìm kiếm người dùng</h4>
+                <div class="flex space-x-2">
+                    <input type="text" id="searchBar" placeholder="Nhập SĐT hoặc Username..." class="w-full text-sm px-4 py-3 rounded-xl border border-pink-200 bg-white/50 focus:outline-none focus:bg-white font-medium transition">
+                    <button onclick="triggerSearch()" class="text-sm bg-pink-500 text-white px-5 py-3 rounded-xl font-bold shadow-md hover:bg-pink-600 transition">Tìm</button>
+                </div>
+                <div id="searchResultsArea" class="mt-4 max-h-32 overflow-y-auto space-y-2 custom-scrollbar"></div>
             </div>
 
-            <!-- Danh sách Lời mời & Bạn bè -->
             <div class="glassmorphism p-5 rounded-3xl shadow-lg flex-1 flex flex-col min-h-[300px]">
-                <div class="mb-5"><h4 id="reqTitle" class="text-xs font-extrabold text-pink-700 mb-3 uppercase border-b border-pink-100 pb-2">📩 Lời mời (0)</h4><div id="friendRequestsArea" class="space-y-2 max-h-32 overflow-y-auto custom-scrollbar"></div></div>
+                <div class="mb-5">
+                    <h4 id="reqTitle" class="text-xs font-black text-pink-700 mb-3 uppercase border-b border-pink-100 pb-2">📩 Lời mời kết bạn (0)</h4>
+                    <div id="friendRequestsArea" class="space-y-2 max-h-32 overflow-y-auto custom-scrollbar"></div>
+                </div>
+                
                 <div class="flex-1 flex flex-col">
                     <div class="flex justify-between items-center mb-3 border-b border-pink-100 pb-2">
-                        <h4 class="text-xs font-extrabold text-pink-700 uppercase">💬 Bạn bè</h4>
-                        <select id="friendFilter" onchange="renderFriendsList()" class="text-[10px] bg-white border border-pink-200 rounded-lg px-2 py-1 font-medium text-pink-800 outline-none">
-                            <option value="active">Đang nhập</option><option value="archived">Lưu trữ</option><option value="blocked">Chặn</option>
+                        <h4 class="text-xs font-black text-pink-700 uppercase">💬 Danh sách bạn bè</h4>
+                        <select id="friendFilter" onchange="renderFriendsList()" class="text-xs bg-white border border-pink-200 rounded-lg px-2 py-1.5 font-bold text-pink-800 outline-none cursor-pointer hover:border-pink-400 transition">
+                            <option value="active">Tất cả bạn bè</option>
+                            <option value="archived">Danh sách lưu trữ</option>
+                            <option value="blocked">Đã chặn</option>
                         </select>
                     </div>
-                    <div id="friendsListArea" class="space-y-1.5 overflow-y-auto flex-1 custom-scrollbar pr-1"></div>
+                    <div id="friendsListArea" class="space-y-2 overflow-y-auto flex-1 custom-scrollbar pr-1"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Cột Phải: Khung chat chính -->
         <div class="flex-1 glassmorphism rounded-[2rem] shadow-xl flex flex-col min-h-[500px] border border-pink-100 overflow-hidden relative">
             
-            <div id="chatHeader" class="px-8 py-5 flex justify-between items-center bg-white/60 backdrop-blur-md border-b border-pink-100 z-10">
+            <div id="chatHeader" class="px-8 py-5 flex justify-between items-center bg-white/60 backdrop-blur-md border-b border-pink-100 z-10 transition-all">
                 <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center text-2xl shadow-inner">👤</div>
-                    <div><h3 id="chatTargetName" class="font-extrabold text-gray-800 text-lg leading-tight">Cherry Chat</h3><p id="chatTargetStatus" class="text-xs text-gray-500 font-medium">Chọn bạn bè để bắt đầu</p></div>
+                    <div class="w-14 h-14 bg-pink-100 rounded-full flex items-center justify-center text-3xl shadow-inner">👤</div>
+                    <div>
+                        <h3 id="chatTargetName" class="font-black text-gray-800 text-xl leading-tight">Meo May Be</h3>
+                        <p id="chatTargetStatus" class="text-xs text-pink-500 font-bold mt-0.5">Chọn một người bạn để mở chat</p>
+                    </div>
                 </div>
                 <div id="chatActions" class="space-x-2 hidden">
-                    <button onclick="viewTargetProfile()" class="px-3 py-1.5 bg-white border border-pink-200 text-pink-600 text-xs font-bold rounded-lg shadow-sm hover:bg-pink-50">Hồ sơ</button>
-                    <button id="btnArchiveToggle" onclick="actionToggleArchive()" class="px-3 py-1.5 bg-white border border-amber-200 text-amber-600 text-xs font-bold rounded-lg shadow-sm hover:bg-amber-50">Lưu trữ</button>
-                    <button id="btnBlockToggle" onclick="actionToggleBlock()" class="px-3 py-1.5 bg-red-50 border border-red-200 text-red-600 text-xs font-bold rounded-lg shadow-sm hover:bg-red-100">Chặn</button>
+                    <button onclick="viewTargetProfile()" class="px-4 py-2 bg-white border border-pink-200 text-pink-600 text-xs font-black rounded-xl shadow-sm hover:bg-pink-50 transition">Hồ sơ</button>
+                    <button id="btnArchiveToggle" onclick="actionToggleArchive()" class="px-4 py-2 bg-white border border-amber-200 text-amber-600 text-xs font-black rounded-xl shadow-sm hover:bg-amber-50 transition">Lưu trữ</button>
+                    <button id="btnBlockToggle" onclick="actionToggleBlock()" class="px-4 py-2 bg-red-50 border border-red-200 text-red-600 text-xs font-black rounded-xl shadow-sm hover:bg-red-100 transition">Chặn</button>
                 </div>
             </div>
             
             <div id="messagesArea" class="flex-1 p-6 overflow-y-auto space-y-4 bg-white/30 custom-scrollbar relative"></div>
             
-            <!-- Indicator gõ phím -->
-            <div id="typingIndicator" class="absolute bottom-[76px] left-6 text-[10px] text-pink-600 font-bold italic hidden bg-white/80 px-3 py-1 rounded-full shadow-sm border border-pink-100 z-10 animate-pulse">💬 Đối phương đang gõ...</div>
+            <div id="typingIndicator" class="absolute bottom-[84px] left-8 text-xs text-pink-600 font-bold italic hidden bg-white/90 px-4 py-1.5 rounded-full shadow-md border border-pink-200 z-10 animate-pulse">
+                Đối phương đang nhâp...
+            </div>
             
-            <form id="messageForm" class="px-6 py-4 bg-white/70 backdrop-blur-md border-t border-pink-100 flex items-center space-x-3 z-10">
-                <button type="button" id="btnCancelEdit" onclick="cancelEdit()" class="hidden text-[10px] text-white bg-red-500 hover:bg-red-600 font-bold px-3 py-2 rounded-xl shadow transition">✕ Hủy sửa</button>
-                <input type="text" id="messageInput" disabled placeholder="Nhập tin nhắn..." class="flex-1 px-5 py-3 rounded-2xl border-2 border-transparent bg-white shadow-inner focus:outline-none focus:border-pink-300 text-sm">
-                <button type="submit" id="btnSendMessage" disabled class="bg-gradient-to-r from-pink-400 to-pink-500 text-white px-8 py-3 rounded-2xl font-black shadow-lg hover:shadow-pink-500/40 disabled:opacity-50">GỬI</button>
+            <form id="messageForm" class="px-6 py-5 bg-white/70 backdrop-blur-md border-t border-pink-100 flex items-center space-x-3 z-10">
+                <button type="button" id="btnCancelEdit" onclick="cancelEdit()" class="hidden text-xs text-white bg-red-500 hover:bg-red-600 font-bold px-4 py-3 rounded-xl shadow transition whitespace-nowrap">✕ Hủy sửa</button>
+                <input type="text" id="messageInput" disabled placeholder="Nhập tin nhắn trao đổi yêu thương..." class="flex-1 px-5 py-3.5 rounded-2xl border-2 border-transparent bg-white shadow-inner focus:outline-none focus:border-pink-300 text-sm font-medium transition">
+                <button type="submit" id="btnSendMessage" disabled class="bg-gradient-to-r from-pink-400 to-pink-500 text-white px-8 py-3.5 rounded-2xl font-black shadow-lg hover:shadow-pink-500/40 disabled:opacity-50 transition">GỬI TIẾP</button>
             </form>
         </div>
     </div>
 
-    <!-- KHU VỰC ADMIN DASHBOARD -->
-    <div id="adminContainer" class="h-full hidden flex flex-col p-6 max-w-7xl mx-auto gap-4 z-20 relative">
-        <div class="glassmorphism p-5 rounded-[2rem] shadow-xl flex justify-between items-center bg-white/80 border border-pink-200">
+    <div id="adminContainer" class="h-full hidden flex flex-col p-6 max-w-7xl mx-auto gap-5 z-20 relative">
+        <div class="glassmorphism p-6 rounded-[2rem] shadow-xl flex justify-between items-center bg-white/80 border border-pink-200">
             <div>
-                <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-pink-600">🛡️ QUẢN TRỊ VIÊN CẤP CAO</h1>
-                <p class="text-xs text-gray-500 font-bold mt-1">Toàn quyền kiểm soát hệ thống</p>
+                <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-pink-600 tracking-tight">🛡️ BAN QUẢN TRỊ VIÊN HỆ THỐNG</h1>
+                <p class="text-sm text-gray-500 font-bold mt-1">Hệ thống giám sát tối cao, điều phối bảo mật, tài khoản và dữ liệu chat</p>
             </div>
-            <button onclick="handleLogout()" class="bg-red-100 border border-red-300 text-red-600 font-bold px-6 py-2.5 rounded-xl shadow-sm hover:bg-red-600 hover:text-white transition">Thoát Admin</button>
+            <button onclick="handleLogout()" class="bg-red-100 border border-red-300 text-red-600 font-black px-8 py-3 rounded-xl shadow-sm hover:bg-red-600 hover:text-white transition">ĐĂNG XUẤT ADMIN</button>
         </div>
-        <div class="glassmorphism rounded-[2rem] shadow-xl p-6 flex-1 overflow-auto bg-white/60 border border-pink-100 custom-scrollbar">
-            <table class="w-full text-left border-collapse text-xs">
+        <div class="glassmorphism rounded-[2rem] shadow-xl p-8 flex-1 overflow-auto bg-white/60 border border-pink-100 custom-scrollbar">
+            <table class="w-full text-left border-collapse text-sm">
                 <thead>
-                    <tr class="border-b-2 border-pink-300 text-pink-700 font-extrabold bg-pink-50/50">
-                        <th class="p-4 rounded-tl-xl">Tài khoản</th>
+                    <tr class="border-b-2 border-pink-300 text-pink-700 font-black bg-pink-50/80">
+                        <th class="p-4 rounded-tl-2xl">Tài khoản User</th>
                         <th class="p-4">Tên hiển thị</th>
-                        <th class="p-4">SĐT</th>
-                        <th class="p-4">Trạng thái</th>
-                        <th class="p-4 rounded-tr-xl">Hành động bảo mật</th>
+                        <th class="p-4">Số điện thoại</th>
+                        <th class="p-4">Trạng thái </th>
+                        <th class="p-4 rounded-tr-2xl">Hành động bảo mật quản trị</th>
                     </tr>
                 </thead>
                 <tbody id="adminUsersTableBody" class="divide-y divide-pink-100"></tbody>
@@ -229,102 +258,106 @@
         </div>
     </div>
 
-    <!-- CÁC MODALS (POPUP) CHỨC NĂNG -->
-    
-    <!-- 1. Modal 2FA Admin -->
-    <div id="admin2FAModal" class="fixed inset-0 bg-red-900/60 z-[100] flex items-center justify-center hidden backdrop-blur-sm">
-        <div class="glassmorphism p-8 rounded-3xl max-w-sm w-full mx-4 shadow-2xl border-2 border-red-400 bg-white/90 text-center">
-            <div class="text-5xl mb-4">🛡️</div>
-            <h3 class="text-2xl font-black text-red-600 mb-2">BẢO MẬT 2 LỚP</h3>
-            <p class="text-xs text-gray-700 mb-6 font-bold">Xác minh lại mật khẩu Admin để vào trang quản trị.</p>
-            <input type="password" id="admin2FAPassword" class="w-full px-5 py-3 rounded-xl border-2 border-red-200 bg-white text-center font-bold tracking-widest focus:border-red-500 focus:outline-none mb-4" placeholder="Nhập mật khẩu Admin...">
-            <button onclick="verifyAdmin2FA()" class="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-black py-3 rounded-xl shadow-lg hover:from-red-600 hover:to-red-700 transition">XÁC MINH & TRUY CẬP</button>
-            <button onclick="handleLogout()" class="mt-4 text-xs font-bold text-gray-500 hover:underline">Hủy & Đăng xuất</button>
+    <div id="admin2FAModal" class="fixed inset-0 bg-red-950/70 z-[100] flex items-center justify-center hidden backdrop-blur-md">
+        <div class="glassmorphism p-10 rounded-[2rem] max-w-sm w-full mx-4 shadow-2xl border-2 border-red-400 bg-white/95 text-center">
+            <div class="text-6xl mb-6">🛡️</div>
+            <h3 class="text-2xl font-black text-red-600 mb-2 tracking-wide">XÁC MINH LỚP CẤP ĐỘ 2</h3>
+            <p class="text-sm text-gray-700 mb-8 font-bold">Yêu cầu nhập lại mã pin/mật mã quản trị bảo mật để cấp quyền điều hành Dashboard.</p>
+            <input type="password" id="admin2FAPassword" class="w-full px-5 py-4 rounded-xl border-2 border-red-200 bg-white text-center text-lg font-black tracking-[0.2em] focus:border-red-500 focus:outline-none mb-6 shadow-inner" placeholder="••••••••">
+            <button onclick="verifyAdmin2FA()" class="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-black py-4 rounded-xl shadow-xl hover:from-red-600 hover:to-red-700 transition transform active:scale-95 text-lg">XÁC MINH QUYỀN HẠN</button>
+            <button onclick="handleLogout()" class="mt-6 text-sm font-bold text-gray-500 hover:text-red-500 transition underline cursor-pointer">Hủy và Đăng xuất</button>
         </div>
     </div>
 
-    <!-- 2. Edit Profile Modal (User) -->
-    <div id="myProfileModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden backdrop-blur-sm">
-        <div class="glassmorphism p-8 rounded-3xl max-w-sm w-full m-4 shadow-2xl bg-white/90">
-            <h3 class="text-xl font-black text-pink-700 mb-6 text-center">HỒ SƠ CÁ NHÂN</h3>
-            <div class="space-y-4 text-xs font-bold">
-                <div><label class="block text-pink-600 mb-1 ml-1">Tên hiển thị</label><input type="text" id="editProfileDisplayName" class="w-full p-3 border-2 border-pink-200 rounded-xl focus:outline-none focus:border-pink-400"></div>
-                <div><label class="block text-pink-600 mb-1 ml-1">Số điện thoại</label><input type="text" id="editProfilePhone" class="w-full p-3 border-2 border-pink-200 rounded-xl focus:outline-none focus:border-pink-400"></div>
-                <div><label class="block text-pink-600 mb-1 ml-1">Email</label><input type="text" id="editProfileEmail" class="w-full p-3 border-2 border-pink-200 rounded-xl focus:outline-none focus:border-pink-400"></div>
+    <div id="myProfileModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden backdrop-blur-sm">
+        <div class="glassmorphism p-8 rounded-[2rem] max-w-sm w-full m-4 shadow-2xl bg-white/95">
+            <h3 class="text-2xl font-black text-pink-700 mb-6 text-center">HỒ SƠ TÀI KHOẢN KẾT NỐI</h3>
+            <div class="space-y-5 text-sm font-bold">
+                <div>
+                    <label class="block text-pink-600 mb-1.5 ml-1">Thay đổi Tên hiển thị (Nickname)</label>
+                    <input type="text" id="editProfileDisplayName" class="w-full p-3.5 border-2 border-pink-200 rounded-xl focus:outline-none focus:border-pink-400 transition">
+                </div>
+                <div>
+                    <label class="block text-pink-600 mb-1.5 ml-1">Thay đổi Số điện thoại</label>
+                    <input type="text" id="editProfilePhone" class="w-full p-3.5 border-2 border-pink-200 rounded-xl focus:outline-none focus:border-pink-400 transition">
+                </div>
+                <div>
+                    <label class="block text-pink-600 mb-1.5 ml-1">Địa chỉ Email (Không bắt buộc)</label>
+                    <input type="text" id="editProfileEmail" class="w-full p-3.5 border-2 border-pink-200 rounded-xl focus:outline-none focus:border-pink-400 transition">
+                </div>
             </div>
-            <div class="mt-6 flex space-x-3">
-                <button onclick="document.getElementById('myProfileModal').classList.add('hidden')" class="flex-1 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300">Hủy</button>
-                <button onclick="saveMyProfile()" class="flex-1 py-3 bg-pink-500 text-white font-bold rounded-xl shadow-lg hover:bg-pink-600">Lưu thay đổi</button>
+            <div class="mt-8 flex space-x-4">
+                <button onclick="document.getElementById('myProfileModal').classList.add('hidden')" class="flex-1 py-3.5 bg-gray-200 text-gray-700 font-black rounded-xl hover:bg-gray-300 transition">HỦY BỎ</button>
+                <button onclick="saveMyProfile()" class="flex-1 py-3.5 bg-gradient-to-r from-pink-400 to-pink-500 text-white font-black rounded-xl shadow-lg hover:shadow-pink-500/40 transition">CẬP NHẬT HỒ SƠ</button>
             </div>
-            <div class="mt-4 pt-4 border-t border-pink-100 text-center">
-                <button onclick="document.getElementById('myProfileModal').classList.add('hidden'); openChangePassModal();" class="text-xs font-bold text-blue-500 hover:underline">Đổi mật khẩu tài khoản</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3. Đổi mật khẩu Modal -->
-    <div id="changePassModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center hidden backdrop-blur-sm">
-        <div class="glassmorphism p-6 rounded-3xl max-w-sm w-full m-4 shadow-2xl bg-white/90">
-            <h3 class="text-lg font-black text-pink-700 mb-4 text-center">ĐỔI MẬT KHẨU</h3>
-            <div class="space-y-3 text-xs font-bold">
-                <div><label class="block mb-1 text-gray-600">Mật khẩu cũ</label><input type="password" id="oldPassInput" class="w-full p-3 border-2 border-pink-200 rounded-xl outline-none"></div>
-                <div><label class="block mb-1 text-gray-600">Mật khẩu mới</label><input type="password" id="newPassInput" class="w-full p-3 border-2 border-pink-200 rounded-xl outline-none"></div>
-            </div>
-            <div class="mt-5 flex space-x-2">
-                <button onclick="closeChangePassModal()" class="flex-1 py-2 bg-gray-200 rounded-xl font-bold hover:bg-gray-300">Hủy</button>
-                <button onclick="submitChangePassInternal()" class="flex-1 py-2 bg-pink-500 text-white rounded-xl font-bold hover:bg-pink-600">Lưu</button>
+            <div class="mt-6 pt-5 border-t-2 border-pink-100 text-center">
+                <button onclick="document.getElementById('myProfileModal').classList.add('hidden'); openChangePassModal();" class="text-sm font-black text-blue-500 hover:text-blue-700 transition">🔑 Đổi mật khẩu đăng nhập cá nhân</button>
             </div>
         </div>
     </div>
 
-    <!-- 4. Xem Profile Bạn Bè Modal -->
-    <div id="profileModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center hidden backdrop-blur-sm">
-        <div class="glassmorphism p-8 rounded-3xl max-w-xs w-full m-4 shadow-2xl text-center bg-white/90">
-            <div class="w-20 h-20 bg-gradient-to-br from-pink-300 to-pink-500 text-white rounded-full flex items-center justify-center text-4xl font-bold mx-auto mb-4 shadow-inner">🌸</div>
-            <h3 id="profName" class="text-xl font-black text-pink-700">Tên</h3>
-            <p id="profUser" class="text-xs text-gray-500 mb-6 font-bold">@user</p>
-            <button onclick="document.getElementById('profileModal').classList.add('hidden')" class="w-full bg-gray-200 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-300">Đóng</button>
+    <div id="changePassModal" class="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center hidden backdrop-blur-sm">
+        <div class="glassmorphism p-8 rounded-[2rem] max-w-sm w-full m-4 shadow-2xl bg-white/95">
+            <h3 class="text-2xl font-black text-pink-700 mb-6 text-center">THAY ĐỔI MẬT MÃ BẢO MẬT</h3>
+            <div class="space-y-5 text-sm font-bold">
+                <div>
+                    <label class="block mb-1.5 text-gray-600">Mật khẩu hiện tại</label>
+                    <input type="password" id="oldPassInput" class="w-full p-3.5 border-2 border-pink-200 rounded-xl outline-none focus:border-pink-400 transition">
+                </div>
+                <div>
+                    <label class="block mb-1.5 text-gray-600">Mật khẩu mới</label>
+                    <input type="password" id="newPassInput" class="w-full p-3.5 border-2 border-pink-200 rounded-xl outline-none focus:border-pink-400 transition">
+                </div>
+            </div>
+            <div class="mt-8 flex space-x-4">
+                <button onclick="closeChangePassModal()" class="flex-1 py-3.5 bg-gray-200 rounded-xl font-black text-gray-700 hover:bg-gray-300 transition">HỦY THAO TÁC</button>
+                <button onclick="submitChangePassInternal()" class="flex-1 py-3.5 bg-pink-500 text-white rounded-xl font-black shadow-lg hover:bg-pink-600 transition">XÁC NHẬN ĐỔI</button>
+            </div>
         </div>
     </div>
 
-    <!-- 5. Admin Chat Modal -->
-    <div id="adminChatModal" class="fixed inset-0 bg-black/60 z-[90] flex items-center justify-center hidden backdrop-blur-sm">
-        <div class="glassmorphism w-full max-w-lg rounded-3xl shadow-2xl flex flex-col h-[500px] m-4 bg-white/90">
-            <div class="px-6 py-5 border-b border-pink-200 flex justify-between items-center">
-                <h3 id="adminChatTitle" class="font-black text-pink-700 text-lg">Kênh Hỗ Trợ</h3>
-                <button onclick="closeAdminChat()" class="text-gray-400 font-black text-xl hover:text-red-500 transition">✕</button>
+    <div id="profileModal" class="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center hidden backdrop-blur-sm">
+        <div class="glassmorphism p-10 rounded-[2rem] max-w-xs w-full m-4 shadow-2xl text-center bg-white/95">
+            <div class="w-24 h-24 bg-gradient-to-br from-pink-300 to-pink-500 text-white rounded-full flex items-center justify-center text-5xl font-bold mx-auto mb-5 shadow-inner">🌸</div>
+            <h3 id="profName" class="text-2xl font-black text-pink-700">Tên Thành Viên</h3>
+            <p id="profUser" class="text-sm text-gray-500 mb-8 font-bold">@username</p>
+            <button onclick="document.getElementById('profileModal').classList.add('hidden')" class="w-full bg-gray-200 text-gray-700 py-3.5 rounded-xl font-black hover:bg-gray-300 transition">ĐÓNG LẠI</button>
+        </div>
+    </div>
+
+    <div id="adminChatModal" class="fixed inset-0 bg-black/70 z-[90] flex items-center justify-center hidden backdrop-blur-md">
+        <div class="glassmorphism w-full max-w-lg rounded-[2rem] shadow-2xl flex flex-col h-[550px] m-4 bg-white/95 overflow-hidden">
+            <div class="px-8 py-5 border-b-2 border-pink-200 flex justify-between items-center bg-white">
+                <h3 id="adminChatTitle" class="font-black text-pink-700 text-xl">Kênh Hỗ Trợ Khách Hàng</h3>
+                <button onclick="closeAdminChat()" class="text-gray-400 font-black text-2xl hover:text-red-500 transition">✕</button>
             </div>
-            <div id="adminChatMessages" class="flex-1 p-6 overflow-y-auto space-y-3 custom-scrollbar"></div>
-            <form id="adminChatForm" class="p-4 border-t border-pink-200 flex gap-2 bg-white/50 rounded-b-3xl">
-                <input type="text" id="adminChatInput" class="flex-1 px-4 py-3 rounded-xl border border-pink-300 focus:outline-none bg-white">
-                <button type="submit" class="bg-pink-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-pink-600">Gửi</button>
+            <div id="adminChatMessages" class="flex-1 p-6 overflow-y-auto space-y-4 custom-scrollbar bg-gray-50/50"></div>
+            <form id="adminChatForm" class="p-5 border-t-2 border-pink-200 flex gap-3 bg-white">
+                <input type="text" id="adminChatInput" class="flex-1 px-5 py-3.5 rounded-xl border-2 border-pink-200 focus:outline-none focus:border-pink-400 font-medium transition" placeholder="Phản hồi trợ giúp hội viên từ Ban Quản Trị...">
+                <button type="submit" class="bg-pink-500 text-white px-8 py-3.5 rounded-xl font-black shadow-lg hover:bg-pink-600 transition">GỬI PHẢN HỒI</button>
             </form>
         </div>
     </div>
 
-    <!-- KHU VỰC NHÚNG JAVASCRIPT (SẼ CÓ Ở PHẦN 3) -->
     <script>
-        // Khởi tạo Socket.io (chưa tự động kết nối khi chưa đăng nhập)
+        // Khởi tạo các cấu trúc biến kết nối Socket
         const socket = io({ autoConnect: false });
-        
-        // Quản lý trạng thái ứng dụng toàn cục
         let currentUser = null;
         let activeChatUserId = null;
         let editingMsgId = null;
         let currentAdminChatUserId = null;
         let globalDataStore = { friends: [], messages: [], requests: [], blocks: [], archives: [] };
         
-        // Âm thanh thông báo tin nhắn mới chuẩn Chat App
+        // Trích xuất file âm thanh Ting Ting mượt mà
         const notifSound = new Audio('https://www.myinstants.com/en/instant/vine-boom-sound-70972/?utm_source=copy&utm_medium=share');
 
-        // --- 1. HỆ THỐNG POPUP ALERT CUSTOM SANG TRỌNG ---
+        // --- 5.1 HỆ THỐNG POPUP CẢNH BÁO NỘI BỘ ---
         let alertCallback = null;
         function showCustomAlert(msg, title = 'Thông báo', callback = null) {
             document.getElementById('customAlertTitle').innerText = title;
             document.getElementById('customAlertMsg').innerText = msg;
             const modal = document.getElementById('customAlertModal');
             const box = document.getElementById('customAlertBox');
-            
             modal.classList.remove('hidden');
             alertCallback = callback;
             setTimeout(() => {
@@ -333,7 +366,7 @@
                 box.classList.add('scale-100');
             }, 10);
         }
-        
+
         function closeCustomAlert() {
             const modal = document.getElementById('customAlertModal');
             const box = document.getElementById('customAlertBox');
@@ -342,23 +375,23 @@
             box.classList.add('scale-95');
             setTimeout(() => {
                 modal.classList.add('hidden');
-                if (alertCallback) alertCallback();
+                if(alertCallback) alertCallback();
             }, 300);
         }
 
-        function triggerPopup(title, content) {
-            const pop = document.getElementById('popupAlert');
-            document.getElementById('popupTitle').innerText = title;
-            document.getElementById('popupContent').innerText = content;
-            pop.classList.remove('hidden');
-            setTimeout(() => { pop.classList.add('scale-100', 'opacity-100'); }, 10);
-            setTimeout(closePopup, 4000); // Tự tắt sau 4 giây
+        function triggerPopup(t, c) {
+            const p = document.getElementById('popupAlert');
+            document.getElementById('popupTitle').innerText = t;
+            document.getElementById('popupContent').innerText = c;
+            p.classList.remove('hidden');
+            setTimeout(() => p.classList.add('scale-100', 'opacity-100'), 10);
+            setTimeout(closePopup, 4500);
         }
-        
+
         function closePopup() {
-            const pop = document.getElementById('popupAlert');
-            pop.classList.remove('scale-100', 'opacity-100');
-            setTimeout(() => pop.classList.add('hidden'), 300);
+            const p = document.getElementById('popupAlert');
+            p.classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => p.add('hidden'), 300);
         }
 
         function showLoading(show) {
@@ -367,78 +400,66 @@
             else { loader.classList.add('opacity-0'); setTimeout(() => loader.classList.add('hidden'), 300); }
         }
 
+        // Đã vá triệt để lỗi đánh máy kẹt màn hình bằng cách trỏ đúng tên thẻ setupProfileCard
         function switchAuthView(view) {
             ['loginCard', 'registerCard', 'forgotCard', 'setupProfileCard'].forEach(id => document.getElementById(id).classList.add('hidden'));
-            document.getElementById(view + 'Card').classList.remove('hidden');
+            if(view === 'setup') {
+                document.getElementById('setupProfileCard').classList.remove('hidden');
+            } else if(view === 'setupProfile') {
+                document.getElementById('setupProfileCard').classList.remove('hidden');
+            } else {
+                document.getElementById(view + 'Card').classList.remove('hidden');
+            }
         }
 
         function togglePassView(id, btn) {
-            const input = document.getElementById(id);
-            if (input.type === 'password') { input.type = 'text'; btn.innerText = 'Ẩn'; }
-            else { input.type = 'password'; btn.innerText = 'Hiện'; }
+            const ip = document.getElementById(id);
+            if(ip.type === 'password') { ip.type = 'text'; btn.innerText = 'Ẩn'; }
+            else { ip.type = 'password'; btn.innerText = 'Hiện'; }
         }
 
-        // --- 2. THUẬT TOÁN ĐỔ BÓNG HOA ANH ĐÀO 3D CANVASES ---
-        const canvas = document.getElementById('sakuraCanvas');
-        const canvasCtx = canvas.getContext('2d');
-        let petals = [];
-
-        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        // --- 5.2 XỬ LÝ HỌA ĐỒ HOA ANH ĐÀO TĨNH LẶNG 3D ---
+        const cvs = document.getElementById('sakuraCanvas'), ctx = cvs.getContext('2d');
+        let pts = [];
+        window.addEventListener('resize', () => { cvs.width = window.innerWidth; cvs.height = window.innerHeight; });
+        cvs.width = window.innerWidth; cvs.height = window.innerHeight;
 
         class Petal {
             constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height - canvas.height;
+                this.x = Math.random() * cvs.width;
+                this.y = Math.random() * cvs.height - cvs.height;
                 this.w = 8 + Math.random() * 6;
                 this.h = 12 + Math.random() * 8;
                 this.d = 1 + Math.random() * 1.5;
-                this.horizontalSpeed = -1 + Math.random() * 2;
-                this.rot = Math.random() * Math.PI * 2;
-                this.rotSpeed = 0.01 + Math.random() * 0.03;
-                this.flip = Math.random() * Math.PI;
-                this.flipSpeed = 0.02 + Math.random() * 0.04;
-                this.opacity = 0.6 + Math.random() * 0.4;
+                this.hs = -1 + Math.random() * 2;
+                this.r = Math.random() * Math.PI * 2;
+                this.rs = 0.01 + Math.random() * 0.03;
+                this.f = Math.random() * Math.PI;
+                this.fs = 0.02 + Math.random() * 0.04;
+                this.o = 0.6 + Math.random() * 0.4;
             }
             draw() {
-                if (this.y > canvas.height + this.h || this.x > canvas.width || this.x < -this.w) {
-                    this.x = Math.random() * canvas.width; this.y = -20;
+                if (this.y > cvs.height + this.h || this.x > cvs.width || this.x < -this.w) {
+                    this.x = Math.random() * cvs.width; this.y = -20;
                 }
-                canvasCtx.save();
-                canvasCtx.translate(this.x, this.y);
-                canvasCtx.rotate(this.rot);
-                canvasCtx.scale(Math.sin(this.flip), 1);
-                canvasCtx.beginPath();
-                canvasCtx.moveTo(0, 0);
-                canvasCtx.bezierCurveTo(-this.w, -this.h * 0.3, -this.w * 0.8, this.h, 0, this.h);
-                canvasCtx.bezierCurveTo(this.w * 0.8, this.h, this.w, -this.h * 0.3, 0, 0);
-                let grad = canvasCtx.createLinearGradient(0, 0, 0, this.h);
-                grad.addColorStop(0, `rgba(255, 182, 193, ${this.opacity})`);
-                grad.addColorStop(1, `rgba(255, 105, 180, ${this.opacity})`);
-                canvasCtx.fillStyle = grad;
-                canvasCtx.fill();
-                canvasCtx.restore();
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.r); ctx.scale(Math.sin(this.f), 1); ctx.beginPath(); ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(-this.w, -this.h * 0.3, -this.w * 0.8, this.h, 0, this.h);
+                ctx.bezierCurveTo(this.w * 0.8, this.h, this.w, -this.h * 0.3, 0, 0);
+                let g = ctx.createLinearGradient(0, 0, 0, this.h);
+                g.addColorStop(0, `rgba(255,182,193,${this.o})`); g.addColorStop(1, `rgba(255,105,180,${this.o})`);
+                ctx.fillStyle = g; ctx.fill(); ctx.restore();
             }
-            update() {
-                this.y += this.d; this.x += this.horizontalSpeed;
-                this.rot += this.rotSpeed; this.flip += this.flipSpeed;
-            }
+            update() { this.y += this.d; this.x += this.hs; this.r += this.rs; this.f += this.fs; }
         }
-        for (let i = 0; i < 65; i++) { petals.push(new Petal()); }
-        function animateSakura() {
-            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-            petals.forEach(p => { p.draw(); p.update(); });
-            requestAnimationFrame(animateSakura);
-        }
-        animateSakura();
+        for (let i = 0; i < 60; i++) pts.push(new Petal());
+        (function anim() { ctx.clearRect(0, 0, cvs.width, cvs.height); pts.forEach(p => { p.draw(); p.update(); }); requestAnimationFrame(anim); })();
 
-        // --- 3. LUỒNG ĐĂNG NHẬP / ĐĂNG KÝ VỚI API SERVER ---
+        // --- 5.3 GIAO TIẾP LUỒNG HỆ THỐNG API VỚI SERVER ---
         window.addEventListener('DOMContentLoaded', async () => {
             showLoading(true);
             try {
-                const res = await fetch('/api/me');
-                if (res.ok) { initAppSession(await res.json()); } 
+                const r = await fetch('/api/me');
+                if (r.ok) { initAppSession(await r.json()); }
                 else { switchAuthView('login'); showLoading(false); }
             } catch (e) { switchAuthView('login'); showLoading(false); }
         });
@@ -448,47 +469,36 @@
             const loginKey = document.getElementById('loginKey').value;
             const password = document.getElementById('loginPassword').value;
             
-            const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loginKey, password }) });
-            const data = await res.json();
-            showLoading(false);
-            if (res.ok) {
-                if (data.needProfile) switchAuthView('setup');
+            const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loginKey, password }) });
+            const d = await r.json(); showLoading(false);
+            if (r.ok) {
+                if (d.needProfile) switchAuthView('setupProfile');
                 else initAppSession(await (await fetch('/api/me')).json());
-            } else { showCustomAlert(data.msg, "Lỗi đăng nhập"); }
+            } else { showCustomAlert(d.msg, "Cảnh báo đăng nhập"); }
         });
 
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault(); showLoading(true);
-            const body = {
-                username: document.getElementById('regUsername').value,
-                phone: document.getElementById('regPhone').value,
-                password: document.getElementById('regPassword').value,
-                confirmPassword: document.getElementById('regConfirmPassword').value
-            };
-            const res = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-            const data = await res.json();
-            showLoading(false);
-            if (res.ok) switchAuthView('setup'); 
-            else { showCustomAlert(data.msg, "Đăng ký không hợp lệ"); }
+            const r = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('regUsername').value, phone: document.getElementById('regPhone').value, password: document.getElementById('regPassword').value, confirmPassword: document.getElementById('regConfirmPassword').value }) });
+            const d = await r.json(); showLoading(false);
+            if (r.ok) switchAuthView('setupProfile'); // Chuyển tiếp mượt sang điền Nickname không bị đơ màn hình
+            else showCustomAlert(d.msg, "Yêu cầu từ hệ thống");
         });
 
         document.getElementById('setupProfileForm').addEventListener('submit', async (e) => {
             e.preventDefault(); showLoading(true);
-            const displayName = document.getElementById('setupDisplayName').value;
-            const res = await fetch('/api/setup-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayName }) });
+            const r = await fetch('/api/setup-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayName: document.getElementById('setupDisplayName').value }) });
             showLoading(false);
-            if (res.ok) initAppSession(await (await fetch('/api/me')).json());
-            else showCustomAlert("Lỗi cấu hình tên hiển thị!", "Lỗi");
+            if (r.ok) initAppSession(await (await fetch('/api/me')).json());
+            else showCustomAlert("Lỗi cấu hình tên hiển thị công công!", "Lỗi");
         });
 
         document.getElementById('forgotForm').addEventListener('submit', async (e) => {
             e.preventDefault(); showLoading(true);
-            const body = { username: document.getElementById('forgotUsername').value, phone: document.getElementById('forgotPhone').value, newPassword: document.getElementById('forgotNewPassword').value };
-            const res = await fetch('/api/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-            const data = await res.json();
-            showLoading(false);
-            showCustomAlert(data.msg, "Khôi phục mật khẩu");
-            if (res.ok) switchAuthView('login');
+            const r = await fetch('/api/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('forgotUsername').value, phone: document.getElementById('forgotPhone').value, newPassword: document.getElementById('forgotNewPassword').value }) });
+            const d = await r.json(); showLoading(false);
+            showCustomAlert(d.msg, "Khôi phục dữ liệu mật khẩu");
+            if (r.ok) switchAuthView('login');
         });
 
         async function handleLogout() {
@@ -501,10 +511,9 @@
             currentUser = user;
             document.getElementById('authContainer').classList.add('hidden');
             showLoading(false);
-            socket.connect(); // Bật ống dẫn Realtime
+            socket.connect(); // Kích hoạt ống dẫn Socket.io Realtime
             
             if (user.role === 'admin') {
-                // Kích hoạt tường lửa 2 lớp cho Admin
                 document.getElementById('admin2FAModal').classList.remove('hidden');
                 document.getElementById('admin2FAPassword').focus();
             } else {
@@ -515,19 +524,19 @@
             }
         }
 
-        // --- 4. BẢO MẬT CHUYÊN SÂU (2FA ADMIN & PROFILE EDIT USER) ---
+        // --- 5.4 BẢO MẬT CHUYÊN SÂU LỚP 2 VÀ EDIT PROFILE BIẾN ĐỒNG BỘ ---
         function verifyAdmin2FA() {
             const pass = document.getElementById('admin2FAPassword').value;
-            if(!pass) return showCustomAlert("Vui lòng nhập mật mã quản trị lớp 2!", "Yêu cầu");
+            if(!pass) return showCustomAlert("Vui lòng nhập mật mã bảo mật lớp 2!", "Yêu cầu quản trị");
             
             socket.emit('verifyAdminAuth', pass, (res) => {
-                if(res.success) {
+                if (res.success) {
                     document.getElementById('admin2FAModal').classList.add('hidden');
                     document.getElementById('adminContainer').classList.remove('hidden');
-                    socket.emit('initData'); 
+                    socket.emit('initData');
                     socket.emit('adminGetUsers');
                 } else {
-                    showCustomAlert(res.msg, "Bị chặn truy cập");
+                    showCustomAlert(res.msg, "Từ chối truy cập");
                     document.getElementById('admin2FAPassword').value = '';
                 }
             });
@@ -546,11 +555,11 @@
                 phone: document.getElementById('editProfilePhone').value.trim(),
                 email: document.getElementById('editProfileEmail').value.trim()
             };
-            if(!data.displayName || !data.phone) return showCustomAlert("Tên hiển thị và SĐT là bắt buộc!", "Lỗi nhập liệu");
+            if(!data.displayName || !data.phone) return showCustomAlert("Tên hiển thị và Số điện thoại không thể bỏ trống!");
             
             socket.emit('updateMyProfile', data, (res) => {
-                showCustomAlert(res.msg, "Cập nhật Hồ sơ");
-                if(res.success) {
+                showCustomAlert(res.msg, "Hồ sơ cá nhân");
+                if (res.success) {
                     document.getElementById('myProfileModal').classList.add('hidden');
                     currentUser.displayName = data.displayName;
                     currentUser.phone = data.phone;
@@ -565,11 +574,11 @@
         function submitChangePassInternal() {
             const oldPass = document.getElementById('oldPassInput').value;
             const newPass = document.getElementById('newPassInput').value;
-            if(!oldPass || !newPass) return showCustomAlert("Vui lòng nhập đủ các ô mật khẩu!");
+            if(!oldPass || !newPass) return showCustomAlert("Điền đầy đủ thông tin vào ô trống!");
             
             socket.emit('changePasswordInternal', { oldPass, newPass }, (res) => {
-                showCustomAlert(res.msg, "Đổi mật khẩu bảo mật");
-                if(res.success) {
+                showCustomAlert(res.msg, "Đổi mật mã bảo mật");
+                if (res.success) {
                     closeChangePassModal();
                     document.getElementById('oldPassInput').value = '';
                     document.getElementById('newPassInput').value = '';
@@ -577,97 +586,83 @@
             });
         }
 
-        // --- 5. LOGIC KẾT NỐI REALTIME SOCKET.IO CHO NGƯỜI DÙNG ---
-        socket.on('userDataPackage', (packageData) => {
-            globalDataStore = packageData;
-            renderFriendRequests(); 
+        // --- 5.5 SỰ KIỆN LẮNG NGHE ĐỒNG BỘ REALTIME TỪ SERVER ---
+        socket.on('userDataPackage', (data) => {
+            globalDataStore = data;
+            renderFriendRequests();
             renderFriendsList();
             if (activeChatUserId) { renderMessages(); updateChatHeader(); }
         });
 
         socket.on('newFriendRequest', (req) => {
             notifSound.play().catch(()=>{});
-            triggerPopup("Lời mời kết bạn", `${req.fromName} đang muốn kết nối với bạn.`);
+            triggerPopup("Lời mời kết bạn mới", `${req.fromName} gửi lời mời tương tác.`);
         });
 
         socket.on('receiveMessage', (msg) => {
             globalDataStore.messages.push(msg);
-            if (msg.from !== currentUser.id) {
-                notifSound.play().catch(()=>{}); // Phát tiếng 'Ting' khi bạn gửi tin tới
-            }
-            if (activeChatUserId && (msg.from === activeChatUserId || msg.to === activeChatUserId)) {
-                renderMessages();
-            }
-            if (currentAdminChatUserId && (msg.from === currentAdminChatUserId || msg.to === currentAdminChatUserId)) {
-                appendAdminMessage(msg);
-            }
+            if (msg.from !== currentUser.id) notifSound.play().catch(()=>{}); // Phát tiếng 'Ting' khi bạn bè gửi tới
+            if (activeChatUserId && (msg.from === activeChatUserId || msg.to === activeChatUserId)) renderMessages();
+            if (currentAdminChatUserId && (msg.from === currentAdminChatUserId || msg.to === currentAdminChatUserId)) appendAdminMessage(msg);
         });
 
-        socket.on('messageUpdated', (updatedMsg) => {
-            const idx = globalDataStore.messages.findIndex(m => m.id === updatedMsg.id);
+        socket.on('messageUpdated', (upd) => {
+            const idx = globalDataStore.messages.findIndex(m => m.id === upd.id);
             if (idx > -1) {
-                globalDataStore.messages[idx] = updatedMsg;
-                if (activeChatUserId && (updatedMsg.from === activeChatUserId || updatedMsg.to === activeChatUserId)) {
-                    renderMessages();
-                }
+                globalDataStore.messages[idx] = upd;
+                if (activeChatUserId && (upd.from === activeChatUserId || upd.to === activeChatUserId)) renderMessages();
             }
         });
 
-        socket.on('userTyping', (userId) => {
-            if(activeChatUserId === userId) document.getElementById('typingIndicator').classList.remove('hidden');
-        });
-        socket.on('userStoppedTyping', (userId) => {
-            if(activeChatUserId === userId) document.getElementById('typingIndicator').classList.add('hidden');
-        });
-
-        socket.on('msgPopupNotification', ({ fromName, text }) => {
+        socket.on('userTyping', (id) => { if(activeChatUserId === id) document.getElementById('typingIndicator').classList.remove('hidden'); });
+        socket.on('userStoppedTyping', (id) => { if(activeChatUserId === id) document.getElementById('typingIndicator').classList.add('hidden'); });
+        
+        socket.on('msgPopupNotification', ({fromName, text}) => {
             if (!activeChatUserId || globalDataStore.friends.find(f => f.id === activeChatUserId).displayName !== fromName) {
                 triggerPopup(`Tin nhắn từ ${fromName}`, text);
             }
         });
 
         socket.on('userStatusChange', ({ userId, status }) => {
-            const friend = globalDataStore.friends.find(f => f.id === userId);
-            if (friend) {
-                friend.isOnline = (status === 'online');
+            const f = globalDataStore.friends.find(x => x.id === userId);
+            if (f) {
+                f.isOnline = (status === 'online');
                 renderFriendsList();
                 if (activeChatUserId === userId) updateChatHeader();
             }
         });
 
-        socket.on('forceLogout', (reason) => {
-            showCustomAlert(reason, "Hệ Thống Bảo Mật", () => { location.reload(); });
-        });
+        socket.on('forceLogout', (reason) => showCustomAlert(reason, "Hệ Thống Thông Báo", () => location.reload()));
 
-        // --- 6. PHẦN XỬ LÝ GIAO DIỆN MẠNG XÃ HỘI & KHUNG CHAT ---
+        // --- 5.6 MẠNG XÃ HỘI VÀ ĐỒ HỌA KHUNG CHAT CHI TIẾT ---
         function triggerSearch() {
-            const query = document.getElementById('searchBar').value.trim();
-            if (query) socket.emit('searchUser', query);
+            const q = document.getElementById('searchBar').value.trim();
+            if (q) socket.emit('searchUser', q);
         }
 
-        socket.on('searchResults', (results) => {
+        socket.on('searchResults', (res) => {
             const area = document.getElementById('searchResultsArea'); area.innerHTML = '';
-            if (results.length === 0) area.innerHTML = '<p class="text-[10px] text-gray-400 font-bold italic">Không tìm thấy thành viên phù hợp.</p>';
-            results.forEach(u => {
+            if (res.length === 0) return area.innerHTML = '<p class="text-xs text-gray-400 font-bold italic">Không tìm thấy thành viên nào phù hợp.</p>';
+            res.forEach(u => {
                 area.innerHTML += `
-                    <div class="flex items-center justify-between bg-white/60 p-2 rounded-xl text-xs border border-pink-100">
+                    <div class="flex items-center justify-between bg-white p-2.5 rounded-xl text-sm border border-pink-100 shadow-sm">
                         <span class="font-bold text-gray-700">${u.displayName} (@${u.username})</span>
-                        <button onclick="socket.emit('sendFriendRequest', '${u.id}'); showCustomAlert('Đã ghim gửi lời mời kết bạn!', 'Thành công'); document.getElementById('searchResultsArea').innerHTML='';" class="bg-pink-500 text-white px-3 py-1 rounded-lg font-bold shadow hover:bg-pink-600 transition text-[11px]">Kết bạn</button>
+                        <button onclick="socket.emit('sendFriendRequest', '${u.id}'); showCustomAlert('Đã gửi lời mời kết nối tới đối phương!', 'Thành công'); document.getElementById('searchResultsArea').innerHTML='';" class="bg-pink-500 text-white px-3 py-1.5 rounded-lg font-black shadow hover:bg-pink-600 transition text-xs">Kết bạn</button>
                     </div>`;
             });
         });
 
         function renderFriendRequests() {
             const area = document.getElementById('friendRequestsArea');
-            document.getElementById('reqTitle').innerText = `📩 Lời mời (${globalDataStore.requests.length})`;
+            document.getElementById('reqTitle').innerText = `📩 Lời mời kết bạn (${globalDataStore.requests.length})`;
             area.innerHTML = '';
             globalDataStore.requests.forEach(r => {
                 area.innerHTML += `
-                    <div class="flex items-center justify-between bg-white p-2.5 rounded-xl text-xs shadow-sm border border-pink-100">
-                        <span class="font-extrabold text-pink-700">${r.fromName}</span>
-                        <div class="space-x-1">
-                            <button onclick="socket.emit('respondFriendRequest', { requestId: '${r.id}', action: 'accept' })" class="bg-green-500 text-white px-2 py-1 rounded-lg font-bold text-[11px] shadow-sm">Đồng ý</button>
-                            <button onclick="socket.emit('respondFriendRequest', { requestId: '${r.id}', action: 'reject' })" class="bg-gray-300 text-gray-600 px-2 py-1 rounded-lg font-bold text-[11px]">Xóa</button>
+                    <div class="flex items-center justify-between bg-white p-3 rounded-xl text-sm shadow-sm border border-pink-100">
+                        <span class="font-black text-pink-700">${r.fromName}</span>
+                        <div class="space-x-1.5">
+                            <button onclick="socket.emit('respondFriendRequest', { requestId: '${r.id}', action: 'accept' })" class="bg-green-500 text-white px-3 py-1.5 rounded-lg font-black text-xs shadow-sm hover:bg-green-600">Đồng ý</button>
+                            <button onclick="socket.emit('respondFriendRequest', { requestId: '${r.id}', action: 'reject' })" class="bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg font-black text-xs hover:bg-gray-300">Xóa</button>
                         </div>
                     </div>`;
             });
@@ -676,37 +671,38 @@
         function renderFriendsList() {
             const filter = document.getElementById('friendFilter').value;
             const area = document.getElementById('friendsListArea'); area.innerHTML = '';
-            let filtered = globalDataStore.friends;
+            let list = globalDataStore.friends;
             
-            if (filter === 'active') filtered = filtered.filter(f => !f.isBlocked && !f.isArchived);
-            if (filter === 'archived') filtered = filtered.filter(f => f.isArchived && !f.isBlocked);
-            if (filter === 'blocked') filtered = filtered.filter(f => f.isBlocked);
-
-            if (filtered.length === 0) {
-                return area.innerHTML = '<p class="text-xs text-gray-400 font-bold text-center py-6 italic">Hộp thoại trống trải...</p>';
+            if (filter === 'active') list = list.filter(f => !f.isBlocked && !f.isArchived);
+            if (filter === 'archived') list = list.filter(f => f.isArchived && !f.isBlocked);
+            if (filter === 'blocked') list = list.filter(f => f.isBlocked);
+            
+            if (list.length === 0) {
+                return area.innerHTML = '<p class="text-sm text-gray-400 font-bold text-center py-6 italic">Hộp thoại trống trải, hãy tìm bạn mới...</p>';
             }
 
-            filtered.forEach(f => {
-                const dot = f.isOnline ? '<span class="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>' : '<span class="w-2.5 h-2.5 bg-gray-300 rounded-full"></span>';
-                const activeClass = (activeChatUserId === f.id) ? 'bg-pink-100 border-pink-300 shadow-inner' : 'bg-white/50 border-transparent hover:bg-white';
+            list.forEach(f => {
+                // ĐỒNG BỘ HIỆU ỨNG CHẤM XANH HOẠT ĐỘNG THỜI GIAN THỰC
+                const dot = f.isOnline 
+                    ? '<span class="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.7)]"></span>' 
+                    : '<span class="w-3 h-3 bg-gray-300 rounded-full"></span>';
+                const cls = (activeChatUserId === f.id) 
+                    ? 'bg-pink-100 border-pink-300 shadow-md transform scale-[1.02]' 
+                    : 'bg-white/60 border-transparent hover:bg-white hover:shadow-sm';
                 
                 area.innerHTML += `
-                    <div onclick="selectChatTarget('${f.id}')" class="flex items-center justify-between p-3 rounded-2xl border-2 cursor-pointer transition ${activeClass}">
+                    <div onclick="selectChatTarget('${f.id}')" class="flex items-center justify-between p-3.5 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${cls}">
                         <div class="flex flex-col">
-                            <span class="font-extrabold text-xs text-gray-700">${f.displayName} ${f.displayName === 'Hệ Thống Admin' ? '🛡️' : ''}</span>
-                            <span class="text-[9px] text-gray-400 mt-0.5">${f.isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}</span>
+                            <span class="font-black text-sm text-gray-800">${f.displayName} ${f.displayName === 'Hệ Thống Admin' ? '🛡️' : ''}</span>
+                            <span class="text-[10px] text-gray-500 font-bold mt-0.5">${f.isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}</span>
                         </div>
-                        <div class="flex items-center space-x-2">${dot}</div>
+                        <div class="flex items-center">${dot}</div>
                     </div>`;
             });
         }
 
         function selectChatTarget(id) {
-            activeChatUserId = id; 
-            cancelEdit(); 
-            renderFriendsList(); 
-            updateChatHeader(); 
-            renderMessages();
+            activeChatUserId = id; cancelEdit(); renderFriendsList(); updateChatHeader(); renderMessages();
             document.getElementById('messageInput').disabled = false;
             document.getElementById('btnSendMessage').disabled = false;
             document.getElementById('chatActions').classList.remove('hidden');
@@ -716,65 +712,52 @@
             const f = globalDataStore.friends.find(x => x.id === activeChatUserId);
             if (!f) return;
             document.getElementById('chatTargetName').innerText = f.displayName;
-            document.getElementById('chatTargetStatus').innerText = f.isOnline ? 'Đang trực tuyến mạng' : 'Không hoạt động';
-            document.getElementById('btnBlockToggle').innerText = f.isBlocked ? 'Mở Chặn 🔓' : 'Chặn Người Này 🚫';
-            document.getElementById('btnArchiveToggle').innerText = f.isArchived ? 'Bỏ lưu trữ 📥' : 'Lưu trữ cuộc trò chuyện 📤';
-            
-            if (f.displayName === 'Hệ Thống Admin') {
-                document.getElementById('btnBlockToggle').classList.add('hidden');
-            } else {
-                document.getElementById('btnBlockToggle').classList.remove('hidden');
-            }
+            document.getElementById('chatTargetStatus').innerText = f.isOnline ? 'Đang trực tuyến mạng' : 'Ngoại tuyến';
+            document.getElementById('btnBlockToggle').innerText = f.isBlocked ? 'Mở Khóa Chặn 🔓' : 'Chặn Liên Lạc 🚫';
+            document.getElementById('btnArchiveToggle').innerText = f.isArchived ? 'Bỏ Lưu Trữ 📥' : 'Lưu Trữ Cuộc Trò Chuyện 📤';
+            if (f.displayName === 'Hệ Thống Admin') document.getElementById('btnBlockToggle').classList.add('hidden');
+            else document.getElementById('btnBlockToggle').classList.remove('hidden');
         }
 
         function renderMessages() {
             const area = document.getElementById('messagesArea'); area.innerHTML = '';
-            const myChatHistory = globalDataStore.messages.filter(m => (m.from === currentUser.id && m.to === activeChatUserId) || (m.from === activeChatUserId && m.to === currentUser.id));
+            const history = globalDataStore.messages.filter(m => (m.from === currentUser.id && m.to === activeChatUserId) || (m.from === activeChatUserId && m.to === currentUser.id));
             
-            myChatHistory.forEach(m => {
+            history.forEach(m => {
                 const isMe = m.from === currentUser.id;
-                const bubble = isMe ? (m.isRecalled ? 'bg-pink-200 text-white opacity-80' : 'bg-gradient-to-br from-pink-400 to-pink-500 text-white shadow-md') : (m.isRecalled ? 'bg-gray-100 text-gray-400 opacity-80' : 'bg-white text-gray-800 border border-pink-100 shadow-sm');
+                const bubble = isMe 
+                    ? (m.isRecalled ? 'bg-pink-200 text-white opacity-80' : 'bg-gradient-to-br from-pink-400 to-pink-500 text-white shadow-md') 
+                    : (m.isRecalled ? 'bg-gray-100 text-gray-400 opacity-80' : 'bg-white text-gray-800 border border-pink-100 shadow-sm');
                 
-                let actions = '';
-                if (isMe && !m.isRecalled) {
-                    actions = `
-                        <div class="hidden group-hover:flex items-center space-x-2 mr-2 text-[10px] text-pink-500 font-bold opacity-75">
-                            <button onclick="prepareEditMessage('${m.id}')" class="hover:text-blue-600 transition">Sửa</button>
-                            <button onclick="recallMessage('${m.id}')" class="hover:text-red-600 transition">Thu hồi</button>
-                        </div>`;
-                }
-
-                const checkEdited = m.isEdited && !m.isRecalled ? '<span class="text-[9px] opacity-70 ml-1 italic">(đã sửa)</span>' : '';
-
+                let acts = (isMe && !m.isRecalled) 
+                    ? `<div class="hidden group-hover:flex items-center space-x-3 mr-3 text-xs text-pink-500 font-black opacity-80"><button onclick="prepareEditMessage('${m.id}')" class="hover:text-blue-600 transition">Sửa</button><button onclick="recallMessage('${m.id}')" class="hover:text-red-600 transition">Thu hồi</button></div>` 
+                    : '';
+                const edMark = m.isEdited && !m.isRecalled ? '<span class="text-[10px] opacity-75 ml-1.5 italic font-bold">(đã sửa)</span>' : '';
+                
                 area.innerHTML += `
-                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'} w-full group mb-1">
-                        ${isMe ? actions : ''}
-                        <div class="max-w-[70%] p-3.5 rounded-2xl text-xs ${bubble} ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}">
-                            <p class="${m.isRecalled ? 'italic font-medium' : 'font-medium leading-relaxed'}">${m.text} ${checkEdited}</p>
-                            <span class="block text-[9px] opacity-50 ${isMe ? 'text-right' : 'text-left'} mt-1 font-bold">${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'} w-full group mb-2">
+                        ${isMe ? acts : ''}
+                        <div class="max-w-[75%] p-4 rounded-3xl text-sm ${bubble} ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}">
+                            <p class="${m.isRecalled ? 'italic font-bold' : 'font-bold leading-relaxed tracking-wide'}">${m.text} ${edMark}</p>
+                            <span class="block text-[10px] opacity-60 ${isMe ? 'text-right' : 'text-left'} mt-1.5 font-black">${new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
                     </div>`;
             });
-            area.scrollTop = area.scrollHeight; // Auto cuộn dòng tin nhắn mới nhất
+            area.scrollTop = area.scrollHeight;
         }
 
-        // Timer nhận diện hành vi gõ bàn phím liên tục
         let typingTimer;
         document.getElementById('messageInput').addEventListener('input', () => {
-            if (!activeChatUserId) return;
+            if(!activeChatUserId) return;
             socket.emit('typing', activeChatUserId);
             clearTimeout(typingTimer);
-            typingTimer = setTimeout(() => { socket.emit('stopTyping', activeChatUserId); }, 1500);
+            typingTimer = setTimeout(() => socket.emit('stopTyping', activeChatUserId), 1500);
         });
 
-        function prepareEditMessage(msgId) {
-            const msg = globalDataStore.messages.find(m => m.id === msgId);
-            if (!msg) return;
-            editingMsgId = msgId;
-            const input = document.getElementById('messageInput');
-            input.value = msg.text;
-            input.focus();
-            
+        function prepareEditMessage(id) {
+            const m = globalDataStore.messages.find(x => x.id === id); if(!m) return;
+            editingMsgId = id;
+            const input = document.getElementById('messageInput'); input.value = m.text; input.focus();
             document.getElementById('btnSendMessage').innerText = 'LƯU SỬA';
             document.getElementById('btnSendMessage').classList.replace('from-pink-400', 'from-blue-400');
             document.getElementById('btnSendMessage').classList.replace('to-pink-500', 'to-blue-500');
@@ -782,33 +765,26 @@
         }
 
         function cancelEdit() {
-            editingMsgId = null;
-            document.getElementById('messageInput').value = '';
+            editingMsgId = null; document.getElementById('messageInput').value = '';
             document.getElementById('btnSendMessage').innerText = 'GỬI';
             document.getElementById('btnSendMessage').classList.replace('from-blue-400', 'from-pink-400');
             document.getElementById('btnSendMessage').classList.replace('to-blue-500', 'to-pink-500');
             document.getElementById('btnCancelEdit').classList.add('hidden');
         }
 
-        function recallMessage(msgId) {
-            if (confirm('Bạn muốn thu hồi tin nhắn này đối với mọi người?')) {
-                socket.emit('recallMessage', msgId);
-            }
-        }
+        function recallMessage(id) { if(confirm('Bạn muốn thu hồi vĩnh viễn tin nhắn này đối với mọi người?')) socket.emit('recallMessage', id); }
 
         document.getElementById('messageForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
-            if (!text || !activeChatUserId) return;
-
+            const input = document.getElementById('messageInput'), text = input.value.trim();
+            if(!text || !activeChatUserId) return;
+            
             if (editingMsgId) {
                 socket.emit('editMessage', { msgId: editingMsgId, newText: text });
                 cancelEdit();
             } else {
-                socket.emit('sendMessage', { toUserId: activeChatUserId, text });
-                input.value = '';
-                socket.emit('stopTyping', activeChatUserId);
+                socket.emit('sendMessage', { toUserId: activeChatUserId, text: text });
+                input.value = ''; socket.emit('stopTyping', activeChatUserId);
             }
             input.focus();
         });
@@ -816,88 +792,79 @@
         function actionToggleBlock() { socket.emit('toggleBlock', activeChatUserId); }
         function actionToggleArchive() { socket.emit('toggleArchive', activeChatUserId); }
         function viewTargetProfile() {
-            const friend = globalDataStore.friends.find(x => x.id === activeChatUserId);
-            if (!friend) return;
-            document.getElementById('profName').innerText = friend.displayName;
+            const f = globalDataStore.friends.find(x => x.id === activeChatUserId); if(!f) return;
+            document.getElementById('profName').innerText = f.displayName;
             document.getElementById('profUser').innerText = 'Hội viên Cherry Chat';
             document.getElementById('profileModal').classList.remove('hidden');
         }
 
-        // --- 7. TOÀN BỘ LOGIC XỬ LÝ DASHBOARD ĐIỀU KHIỂN ADMIN ---
+        // --- 5.7 CHƯƠNG TRÌNH ĐIỀU KHIỂN BẢNG DASHBOARD QUẢN TRỊ ADMIN ---
         socket.on('adminUsersList', (users) => {
             const tbody = document.getElementById('adminUsersTableBody'); tbody.innerHTML = '';
             users.forEach(u => {
-                const onlineBadge = u.isOnline ? '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-black shadow-sm">ONLINE</span>' : '<span class="bg-gray-100 text-gray-500 px-3 py-1 rounded-full font-bold">OFFLINE</span>';
-                const lockBadge = u.isBanned ? '<span class="text-red-500 font-black ml-2 animate-pulse">🔒 ĐANG KHÓA</span>' : '';
+                // ĐỒNG BỘ TRẠNG THÁI ON/OFF CỦA TOÀN BỘ USER LÊN GIAO DIỆN ADMIN
+                const statusBadge = u.isOnline 
+                    ? '<span class="bg-green-100 text-green-700 px-4 py-1.5 rounded-full font-black shadow-sm">ONLINE</span>' 
+                    : '<span class="bg-gray-100 text-gray-500 px-4 py-1.5 rounded-full font-bold">OFFLINE</span>';
+                const lockBadge = u.isBanned ? '<span class="text-red-500 font-black ml-3 animate-pulse">🔒 ĐANG KHÓA TÀI KHOẢN</span>' : '';
                 
-                const actions = u.role === 'admin'
-                    ? `<button onclick="socket.emit('adminUpdateUser',{id:'${u.id}',displayName:document.getElementById('admDisp-${u.id}').value,phone:document.getElementById('admPhone-${u.id}').value})" class="bg-blue-500 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 shadow-md">Cập nhật</button> <span class="text-[10px] font-black text-gray-400 bg-gray-100 px-2 py-1.5 rounded-lg">🛡️ HỆ THỐNG</span>`
-                    : `<button onclick="openAdminChat('${u.id}','${u.displayName||u.username}')" class="bg-purple-500 text-white px-3 py-1.5 rounded-lg font-bold shadow hover:bg-purple-600">💬 Hỗ trợ</button>
-                       <button onclick="socket.emit('adminUpdateUser',{id:'${u.id}',displayName:document.getElementById('admDisp-${u.id}').value,phone:document.getElementById('admPhone-${u.id}').value})" class="bg-blue-500 text-white px-3 py-1.5 rounded-lg font-bold shadow hover:bg-blue-600">Sửa</button>
-                       <button onclick="adminResetPasswordPrompt('${u.id}', '${u.displayName||u.username}')" class="bg-gray-700 text-white px-3 py-1.5 rounded-lg font-bold shadow hover:bg-gray-900">🔑 Đổi Pass</button>
-                       <button onclick="let m=prompt('Số phút khóa tài khoản (gõ infinite để khóa vĩnh viễn):','10'); if(m) socket.emit('adminBanUser',{targetId:'${u.id}',durationMinutes:m})" class="bg-amber-500 text-white px-3 py-1.5 rounded-lg font-bold shadow hover:bg-amber-600">Khóa</button>
-                       ${u.isBanned ? `<button onclick="socket.emit('adminUnbanUser','${u.id}')" class="bg-green-500 text-white px-3 py-1.5 rounded-lg font-bold shadow hover:bg-green-600">Mở</button>` : ''}
-                       <button onclick="if(confirm('Bạn có chắc xóa vĩnh viễn tài khoản này?')) socket.emit('adminDeleteUser','${u.id}')" class="bg-red-500 text-white px-3 py-1.5 rounded-lg font-bold shadow hover:bg-red-600">Xóa</button>`;
-
+                const actionsHtml = u.role === 'admin' 
+                    ? `<button onclick="socket.emit('adminUpdateUser',{id:'${u.id}',displayName:document.getElementById('admDisp-${u.id}').value,phone:document.getElementById('admPhone-${u.id}').value})" class="bg-blue-500 text-white px-4 py-2 rounded-xl font-black shadow-md hover:bg-blue-600 transition">Cập nhật</button> <span class="text-xs font-black text-gray-400 bg-gray-100 px-3 py-2 rounded-xl ml-2">🛡️ HỆ THỐNG</span>` 
+                    : `<button onclick="openAdminChat('${u.id}','${u.displayName||u.username}')" class="bg-purple-500 text-white px-4 py-2 rounded-xl font-black shadow-md hover:bg-purple-600 transition">💬 Hỗ trợ</button>
+                       <button onclick="socket.emit('adminUpdateUser',{id:'${u.id}',displayName:document.getElementById('admDisp-${u.id}').value,phone:document.getElementById('admPhone-${u.id}').value})" class="bg-blue-500 text-white px-4 py-2 rounded-xl font-black shadow-md hover:bg-blue-600 transition">Sửa</button>
+                       <button onclick="adminResetPasswordPrompt('${u.id}', '${u.displayName||u.username}')" class="bg-gray-800 text-white px-4 py-2 rounded-xl font-black shadow-md hover:bg-gray-900 transition">🔑 Đổi Pass</button>
+                       <button onclick="let m=prompt('Số phút muốn khóa hội viên (hoặc gõ infinite để khóa vĩnh viễn):','10'); if(m) socket.emit('adminBanUser',{targetId:'${u.id}',durationMinutes:m})" class="bg-amber-500 text-white px-4 py-2 rounded-xl font-black shadow-md hover:bg-amber-600 transition">Khóa</button>
+                       ${u.isBanned ? `<button onclick="socket.emit('adminUnbanUser','${u.id}')" class="bg-green-500 text-white px-4 py-2 rounded-xl font-black shadow-md hover:bg-green-600 transition">Mở</button>` : ''}
+                       <button onclick="if(confirm('Xóa vĩnh viễn tài khoản này ra khỏi cơ sở dữ liệu hệ thống?')) socket.emit('adminDeleteUser','${u.id}')" class="bg-red-500 text-white px-4 py-2 rounded-xl font-black shadow-md hover:bg-red-600 transition">Xóa</button>`;
+                
                 tbody.innerHTML += `
                     <tr class="hover:bg-white transition">
-                        <td class="p-4 font-bold text-gray-700">@${u.username}</td>
-                        <td class="p-4"><input type="text" value="${u.displayName||''}" id="admDisp-${u.id}" class="border-2 border-pink-100 rounded-lg px-2 py-1 w-full focus:border-pink-400 font-bold text-gray-600 outline-none"></td>
-                        <td class="p-4"><input type="text" value="${u.phone||''}" id="admPhone-${u.id}" class="border-2 border-pink-100 rounded-lg px-2 py-1 w-full focus:border-pink-400 font-bold text-gray-600 outline-none"></td>
-                        <td class="p-4">${onlineBadge} ${lockBadge}</td>
-                        <td class="p-4 space-x-1 whitespace-nowrap">${actions}</td>
+                        <td class="p-5 font-black text-gray-700 text-base">@${u.username}</td>
+                        <td class="p-5"><input type="text" value="${u.displayName||''}" id="admDisp-${u.id}" class="border-2 border-pink-200 rounded-xl px-3 py-2 w-full focus:border-pink-400 font-bold text-gray-600 outline-none transition"></td>
+                        <td class="p-5"><input type="text" value="${u.phone||''}" id="admPhone-${u.id}" class="border-2 border-pink-200 rounded-xl px-3 py-2 w-full focus:border-pink-400 font-bold text-gray-600 outline-none transition"></td>
+                        <td class="p-5 whitespace-nowrap">${statusBadge} ${lockBadge}</td>
+                        <td class="p-5 space-x-1.5 whitespace-nowrap">${actionsHtml}</td>
                     </tr>`;
             });
         });
 
-        socket.on('adminActionDone', () => {
-            socket.emit('adminGetUsers');
-            showCustomAlert("Lệnh quản trị đã được thực thi trên cơ sở dữ liệu!", "Admin Thành Công");
-        });
-
-        function adminResetPasswordPrompt(userId, userName) {
-            const newPass = prompt(`CẤP LẠI MẬT KHẨU cho tài khoản [ ${userName} ]\nMật khẩu mới bắt buộc phải chứa ít nhất 1 ký tự đặc biệt như @, #, $...:`);
-            if(newPass) {
-                socket.emit('adminResetUserPassword', { targetId: userId, newPassword: newPass });
-            }
+        socket.on('adminActionDone', () => { socket.emit('adminGetUsers'); showCustomAlert("Lệnh cấu trúc quản trị đã được ghi vào hệ thống!", "Cơ sở dữ liệu"); });
+        
+        function adminResetPasswordPrompt(id, name) {
+            const p = prompt(`CẤP LẠI MẬT KHẨU cho hội viên [ ${name} ]\nMật khẩu mới bắt buộc tuân thủ chuẩn chứa ít nhất 1 ký tự đặc biệt như @, #, !...:`);
+            if(p) socket.emit('adminResetUserPassword', {targetId: id, newPassword: p});
         }
 
         function openAdminChat(id, name) {
             currentAdminChatUserId = id;
-            document.getElementById('adminChatTitle').innerText = 'Hỗ trợ hội viên: ' + name;
+            document.getElementById('adminChatTitle').innerText = 'Hỗ trợ hội viên trực tuyến: ' + name;
             document.getElementById('adminChatModal').classList.remove('hidden');
             socket.emit('adminGetChat', id);
         }
+        function closeAdminChat() { document.getElementById('adminChatModal').classList.add('hidden'); currentAdminChatUserId = null; }
         
-        function closeAdminChat() { 
-            document.getElementById('adminChatModal').classList.add('hidden'); 
-            currentAdminChatUserId = null; 
-        }
-
         socket.on('adminChatData', (msgs) => {
-            const area = document.getElementById('adminChatMessages'); area.innerHTML = '';
+            const a = document.getElementById('adminChatMessages'); a.innerHTML = '';
             msgs.forEach(m => appendAdminMessage(m));
-            area.scrollTop = area.scrollHeight;
+            a.scrollTop = a.scrollHeight;
         });
 
         function appendAdminMessage(m) {
-            const area = document.getElementById('adminChatMessages');
-            const isMe = m.from === currentUser.id;
-            area.innerHTML += `
-                <div class="flex ${isMe ? 'justify-end' : 'justify-start'} w-full mb-1">
-                    <div class="max-w-[80%] p-3 rounded-2xl text-xs font-medium shadow-sm ${isMe ? 'bg-pink-500 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm border border-gray-200'}">
+            const a = document.getElementById('adminChatMessages'), isMe = m.from === currentUser.id;
+            a.innerHTML += `
+                <div class="flex ${isMe ? 'justify-end' : 'justify-start'} w-full mb-2">
+                    <div class="max-w-[80%] p-4 rounded-2xl text-sm font-bold shadow-sm ${isMe ? 'bg-pink-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm border-2 border-pink-100'}">
                         <p>${m.text}</p>
                     </div>
                 </div>`;
-            area.scrollTop = area.scrollHeight;
+            a.scrollTop = a.scrollHeight;
         }
 
         document.getElementById('adminChatForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            const input = document.getElementById('adminChatInput');
-            if(!input.value.trim() || !currentAdminChatUserId) return;
-            socket.emit('sendMessage', { toUserId: currentAdminChatUserId, text: input.value.trim() });
-            input.value = '';
+            const i = document.getElementById('adminChatInput'); if(!i.value.trim() || !currentAdminChatUserId) return;
+            socket.emit('sendMessage', { toUserId: currentAdminChatUserId, text: i.value.trim() });
+            i.value = '';
         });
     </script>
 </body>
