@@ -9,11 +9,13 @@ const bcrypt = require('bcryptjs');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 1e7 }); // Giới hạn ảnh 10MB
+const io = new Server(server, { maxHttpBufferSize: 1e7 }); // Hỗ trợ gửi ảnh lên tới 10MB
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'database.json');
 
-// --- 1. KHỞI TẠO CƠ SỞ DỮ LIỆU ---
+// ====================================================================================
+// --- 1. HỆ THỐNG CƠ SỞ DỮ LIỆU ---
+// ====================================================================================
 function initDatabase() {
     if (!fs.existsSync(DB_FILE)) {
         const adminPasswordHash = bcrypt.hashSync('admin123@', 10);
@@ -38,21 +40,27 @@ function initDatabase() {
         if(needsUpdate) writeDB(db);
     }
 }
+
 function readDB() { 
     try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); } 
-    catch (e) { return { users: [], messages: [], friendRequests: [] }; }
+    catch (e) { console.error("Lỗi đọc DB:", e); return { users: [], messages: [], friendRequests: [] }; }
 }
+
 function writeDB(data) { 
     try { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2)); } 
     catch (e) { console.error("Lỗi ghi Database:", e); }
 }
+
 initDatabase();
 
+// ====================================================================================
+// --- 2. CẤU HÌNH SERVER & SESSION ---
+// ====================================================================================
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 const sessionMiddleware = session({
-    secret: 'cherry-blossom-secret-key-pro-v6',
+    secret: 'cherry-blossom-secret-key-pro-v7',
     resave: false, saveUninitialized: true,
     store: new MemoryStore({ checkPeriod: 86400000 }), 
     cookie: { maxAge: 24 * 60 * 60 * 1000 }
@@ -63,10 +71,12 @@ io.use((socket, next) => { sessionMiddleware(socket.request, socket.request.res 
 
 let onlineUsers = {}; 
 
-// --- 2. API XÁC THỰC VÀ QUÊN MẬT KHẨU ---
+// ====================================================================================
+// --- 3. API XÁC THỰC VÀ QUẢN LÝ TÀI KHOẢN ---
+// ====================================================================================
 app.post('/api/register', (req, res) => {
     const { username, phone, email, password, confirmPassword } = req.body;
-    if (username.length < 4) return res.status(400).json({ msg: "Tên đăng nhập >= 4 ký tự!" });
+    if (username.length < 4) return res.status(400).json({ msg: "Tên đăng nhập trên 4 ký tự!" });
     if (password !== confirmPassword) return res.status(400).json({ msg: "Mật khẩu không khớp!" });
 
     const db = readDB();
@@ -83,13 +93,11 @@ app.post('/api/register', (req, res) => {
     res.json({ msg: "Đăng ký thành công!", step: "setupProfile" });
 });
 
-// KHÔI PHỤC TÍNH NĂNG: QUÊN MẬT KHẨU
 app.post('/api/forgot-password', (req, res) => {
     const { username, phone, newPassword } = req.body;
     const db = readDB();
     const user = db.users.find(u => u.username === username && u.phone === phone);
-    
-    if (!user) return res.status(400).json({ msg: "Thông tin tài khoản hoặc số điện thoại không chính xác!" });
+    if (!user) return res.status(400).json({ msg: "Thông tin tài khoản hoặc SĐT không chính xác!" });
     
     user.password = bcrypt.hashSync(newPassword, 10);
     writeDB(db);
@@ -98,13 +106,17 @@ app.post('/api/forgot-password', (req, res) => {
 
 app.post('/api/setup-profile', (req, res) => {
     if (!req.session.userId) return res.status(401).json({ msg: "Chưa đăng nhập!" });
-    const { displayName } = req.body; const db = readDB(); 
+    const { displayName } = req.body; 
+    const db = readDB(); 
     const user = db.users.find(u => u.id === req.session.userId);
-    user.displayName = displayName; writeDB(db); res.json({ msg: "Thành công!", role: user.role });
+    user.displayName = displayName; 
+    writeDB(db); 
+    res.json({ msg: "Thành công!", role: user.role });
 });
 
 app.post('/api/login', (req, res) => {
-    const { loginKey, password } = req.body; const db = readDB();
+    const { loginKey, password } = req.body; 
+    const db = readDB();
     const user = db.users.find(u => u.username === loginKey || u.phone === loginKey);
     if (!user || !bcrypt.compareSync(password, user.password)) return res.status(400).json({ msg: "Sai tài khoản hoặc mật khẩu!" });
     
@@ -117,7 +129,10 @@ app.post('/api/login', (req, res) => {
     res.json({ msg: "Đăng nhập thành công!", role: user.role, needProfile: (!user.displayName || user.displayName.trim() === "") });
 });
 
-app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ msg: "Đã đăng xuất!" }); });
+app.post('/api/logout', (req, res) => { 
+    req.session.destroy(); 
+    res.json({ msg: "Đã đăng xuất!" }); 
+});
 
 app.get('/api/me', (req, res) => {
     try {
@@ -134,7 +149,9 @@ app.get('/api/me', (req, res) => {
     } catch(e) { res.status(500).json({ msg: "Lỗi máy chủ" }); }
 });
 
-// --- 3. SOCKET & LỚP BẢO MẬT THÉP ---
+// ====================================================================================
+// --- 4. HỆ THỐNG SOCKET THỜI GIAN THỰC (CHAT + ADMIN) ---
+// ====================================================================================
 io.on('connection', (socket) => {
     const session = socket.request.session;
     if (!session || !session.userId) return;
@@ -158,6 +175,7 @@ io.on('connection', (socket) => {
     socket.on('typing', (to) => { if(!checkBanStatus() && onlineUsers[to]) io.to(onlineUsers[to]).emit('userTyping', currentUserId); });
     socket.on('stopTyping', (to) => { if (onlineUsers[to]) io.to(onlineUsers[to]).emit('userStoppedTyping', currentUserId); });
 
+    // Gửi tin nhắn
     socket.on('sendMessage', ({ toUserId, text, type = 'text', imgData = null }) => {
         if(checkBanStatus()) return; 
         const db = readDB(); const sender = db.users.find(u => u.id === currentUserId);
@@ -169,10 +187,10 @@ io.on('connection', (socket) => {
         }
         if (sender.isMuted && sender.role !== 'admin') {
             const t = sender.muteUntil ? `đến ${new Date(sender.muteUntil).toLocaleString()}` : "vĩnh viễn";
-            return socket.emit('actionError', `Bạn đã bị cấm nhắn tin ${t}.`);
+            return socket.emit('actionError', `Bạn bị cấm nhắn tin ${t}.`);
         }
         if (sender.role !== 'admin' && receiver.role !== 'admin') {
-            if (receiver.blocks && receiver.blocks.includes(currentUserId)) return socket.emit('actionError', "Không thể gửi. Đối phương đã chặn bạn!");
+            if (receiver.blocks && receiver.blocks.includes(currentUserId)) return socket.emit('actionError', "Không thể gửi. Bị chặn!");
             if (sender.blocks && sender.blocks.includes(toUserId)) return socket.emit('actionError', "Bạn đang chặn người này!");
             if (!sender.friends.includes(toUserId)) return socket.emit('actionError', "Hai người chưa là bạn bè!");
         }
@@ -183,10 +201,11 @@ io.on('connection', (socket) => {
         socket.emit('receiveMessage', msgObj);
         if (onlineUsers[toUserId]) {
             io.to(onlineUsers[toUserId]).emit('receiveMessage', msgObj);
-            io.to(onlineUsers[toUserId]).emit('msgPopupNotification', { fromName: sender.displayName, text: type === 'image' ? '📸 Đã gửi một hình ảnh' : text });
+            io.to(onlineUsers[toUserId]).emit('msgPopupNotification', { fromName: sender.displayName, text: type === 'image' ? '📸 Đã gửi một ảnh' : text });
         }
     });
 
+    // Cập nhật profile & Password
     socket.on('updateMyProfile', (data, callback) => {
         if(checkBanStatus()) return; const db = readDB(); const user = db.users.find(u => u.id === currentUserId);
         user.displayName = data.displayName; user.phone = data.phone; user.email = data.email;
@@ -199,7 +218,7 @@ io.on('connection', (socket) => {
         if (user && bcrypt.compareSync(oldPass, user.password)) { user.password = bcrypt.hashSync(newPass, 10); writeDB(db); cb({ success: true, msg: "Đổi pass thành công!" }); } else cb({ success: false, msg: "Pass cũ sai!" });
     });
 
-    // --- Mạng xã hội bạn bè ---
+    // Bạn bè
     socket.on('searchUser', (q) => { if(!checkBanStatus()){ const db = readDB(); socket.emit('searchResults', db.users.filter(u => u.id !== currentUserId && u.role !== 'admin' && (u.username.includes(q) || u.phone.includes(q))).map(u => ({ id: u.id, displayName: u.displayName || u.username, username: u.username }))); }});
     socket.on('sendFriendRequest', (targetId) => {
         if(checkBanStatus()) return; const db = readDB(); if (db.friendRequests.find(r => (r.from === currentUserId && r.to === targetId) || (r.from === targetId && r.to === currentUserId))) return;
@@ -218,27 +237,21 @@ io.on('connection', (socket) => {
     socket.on('toggleBlock', (tId) => { if(checkBanStatus()) return; const db = readDB(); const u = db.users.find(x => x.id === currentUserId); const idx = u.blocks.indexOf(tId); if (idx > -1) u.blocks.splice(idx, 1); else u.blocks.push(tId); writeDB(db); sendUserDataUpdate(currentUserId, socket); if(onlineUsers[tId]) sendUserDataUpdate(tId, io.to(onlineUsers[tId])); });
     socket.on('toggleArchive', (tId) => { if(checkBanStatus()) return; const db = readDB(); const u = db.users.find(x => x.id === currentUserId); const idx = u.archives.indexOf(tId); if (idx > -1) u.archives.splice(idx, 1); else u.archives.push(tId); writeDB(db); sendUserDataUpdate(currentUserId, socket); });
 
-    // --- Admin Tools ---
+    // Admin
     socket.on('verifyAdminAuth', (pass, cb) => { const db = readDB(); const a = db.users.find(u => u.id === currentUserId && u.role === 'admin'); if (a && bcrypt.compareSync(pass, a.password)) cb({ success: true }); else cb({ success: false, msg: "Sai mật mã!" }); });
     socket.on('adminGetUsers', () => { const db = readDB(); if (db.users.find(u => u.id === currentUserId && u.role === 'admin')) socket.emit('adminUsersList', db.users.map(u => ({ id: u.id, username: u.username, displayName: u.displayName, role: u.role, isBanned: u.isBanned, banUntil: u.banUntil, isMuted: u.isMuted, muteUntil: u.muteUntil, isOnline: !!onlineUsers[u.id] }))); });
-    
-    // KHÔI PHỤC TÍNH NĂNG: ADMIN ĐỔI TÊN NGƯỜI DÙNG
     socket.on('adminUpdateUser', (data) => {
         const db = readDB();
         if (db.users.find(u => u.id === currentUserId && u.role === 'admin')) {
             const targetUser = db.users.find(u => u.id === data.id);
             if (targetUser) {
-                targetUser.displayName = data.displayName;
-                writeDB(db);
-                socket.emit('actionSuccess', "Đổi tên người dùng thành công!");
-                // Gửi lại danh sách mới cho Admin
+                targetUser.displayName = data.displayName; writeDB(db);
+                socket.emit('actionSuccess', "Đổi tên thành công!");
                 socket.emit('adminUsersList', db.users.map(u => ({ id: u.id, username: u.username, displayName: u.displayName, role: u.role, isBanned: u.isBanned, banUntil: u.banUntil, isMuted: u.isMuted, muteUntil: u.muteUntil, isOnline: !!onlineUsers[u.id] })));
-                // Đồng bộ cập nhật cho người dùng nếu đang online
                 if(onlineUsers[data.id]) sendUserDataUpdate(data.id, io.to(onlineUsers[data.id]));
             }
         }
     });
-
     socket.on('adminPunishUser', ({ targetId, action, durationMinutes }, cb) => {
         const db = readDB(); if (db.users.find(u => u.id === currentUserId && u.role === 'admin')) {
             const target = db.users.find(u => u.id === targetId && u.role !== 'admin');
@@ -256,46 +269,213 @@ io.on('connection', (socket) => {
             }
         }
     });
-
     socket.on('adminGetChat', (targetId) => {
         const db = readDB();
-        if (db.users.find(u => u.id === currentUserId && u.role === 'admin')) {
-            socket.emit('adminChatData', db.messages.filter(m => (m.from === currentUserId && m.to === targetId) || (m.from === targetId && m.to === currentUserId)));
+        if (db.users.find(u => u.id === currentUserId && u.role === 'admin')) socket.emit('adminChatData', db.messages.filter(m => (m.from === currentUserId && m.to === targetId) || (m.from === targetId && m.to === currentUserId)));
+    });
+
+
+    // ====================================================================================
+    // --- 5A. CHẾ ĐỘ CHƠI TỰ DO (FREE-FOR-ALL ARENA) - GIỮ LẠI THEO YÊU CẦU ---
+    // ====================================================================================
+    socket.on('joinFFAGame', () => { 
+        if(checkBanStatus()) return; 
+        const db = readDB(); const user = db.users.find(u => u.id === currentUserId); if(!user) return; 
+        socket.join('ffaGameRoom'); 
+        ffaGameState.players[socket.id] = { 
+            id: socket.id, userId: currentUserId, name: user.displayName || user.username, 
+            x: Math.random() * 600 + 100, y: Math.random() * 400 + 50, 
+            color: `hsl(${Math.random() * 360}, 100%, 70%)`, hp: 100, score: user.gameScore || 0,
+            keys: { w: false, a: false, s: false, d: false }
+        }; 
+    });
+
+    socket.on('leaveFFAGame', () => { socket.leave('ffaGameRoom'); delete ffaGameState.players[socket.id]; });
+    
+    // Gộp input cho cả FFA
+    socket.on('ffaInput', ({ keys, aimAngle, isShooting }) => {
+        const p = ffaGameState.players[socket.id];
+        if(p && p.hp > 0) {
+            p.keys = keys;
+            if(isShooting && (!p.lastShot || Date.now() - p.lastShot > 200)) { 
+                p.lastShot = Date.now();
+                ffaGameState.bullets.push({ 
+                    x: p.x, y: p.y, vx: Math.cos(aimAngle)*15, vy: Math.sin(aimAngle)*15, 
+                    ownerId: socket.id, life: 60 
+                });
+            }
         }
     });
 
-    // --- Game Engine ---
-    socket.on('joinGame', () => { if(checkBanStatus()) return; const db = readDB(); const user = db.users.find(u => u.id === currentUserId); if(!user) return; socket.join('gameRoom'); gameState.players[socket.id] = { id: socket.id, userId: currentUserId, name: user.displayName || user.username, x: Math.random() * 600 + 100, y: Math.random() * 400 + 100, color: `hsl(${Math.random() * 360}, 100%, 70%)`, hp: 100, score: user.gameScore || 0 }; });
-    socket.on('leaveGame', () => { socket.leave('gameRoom'); delete gameState.players[socket.id]; });
-    socket.on('playerMove', (data) => { const p = gameState.players[socket.id]; if(p && p.hp > 0) { p.x = data.x; p.y = data.y; } });
-    socket.on('playerShoot', (data) => { const p = gameState.players[socket.id]; if(p && p.hp > 0) gameState.bullets.push({ id: Math.random(), ownerId: socket.id, x: p.x, y: p.y, vx: data.vx, vy: data.vy, life: 60 }); });
-    socket.on('disconnect', () => { delete onlineUsers[currentUserId]; delete gameState.players[socket.id]; io.emit('userStatusChange', { userId: currentUserId, status: 'offline' }); });
+
+    // ====================================================================================
+    // --- 5B. CHẾ ĐỘ THÁCH ĐẤU (PK 1VS1) - TÍNH NĂNG MỚI NÂNG CẤP ---
+    // ====================================================================================
+    socket.on('invitePK', (targetId) => {
+        if(checkBanStatus()) return;
+        if(onlineUsers[targetId]) {
+            const db = readDB(); const sender = db.users.find(u => u.id === currentUserId);
+            io.to(onlineUsers[targetId]).emit('pkInviteReceived', { fromId: currentUserId, fromName: sender.displayName || sender.username });
+        } else socket.emit('actionError', "Đối thủ không online!");
+    });
+
+    socket.on('declinePK', (inviterId) => { if(onlineUsers[inviterId]) io.to(onlineUsers[inviterId]).emit('actionError', "Đối thủ đã từ chối lời mời PK."); });
+
+    socket.on('acceptPK', (inviterId) => {
+        if(checkBanStatus()) return;
+        const inviterSocketId = onlineUsers[inviterId];
+        if(!inviterSocketId) return socket.emit('actionError', "Người mời đã thoát!");
+
+        const roomId = 'pk_' + Date.now();
+        socket.join(roomId); io.sockets.sockets.get(inviterSocketId)?.join(roomId);
+        const db = readDB(); const p1 = db.users.find(u => u.id === inviterId); const p2 = db.users.find(u => u.id === currentUserId);
+
+        pkRooms[roomId] = {
+            id: roomId, status: 'waiting', 
+            players: {
+                [inviterSocketId]: { id: inviterSocketId, userId: p1.id, name: p1.displayName || p1.username, x: 200, y: 250, color: '#f87171', hp: 100, score: 0 },
+                [socket.id]: { id: socket.id, userId: p2.id, name: p2.displayName || p2.username, x: 600, y: 250, color: '#60a5fa', hp: 100, score: 0 }
+            }, bullets: []
+        };
+        io.to(roomId).emit('pkRoomJoined', pkRooms[roomId]);
+    });
+
+    socket.on('startPK', (roomId) => {
+        if(pkRooms[roomId] && pkRooms[roomId].status === 'waiting') {
+            if(Object.keys(pkRooms[roomId].players).length === 2) {
+                pkRooms[roomId].status = 'playing';
+                let i = 0;
+                for(let sid in pkRooms[roomId].players) {
+                    let p = pkRooms[roomId].players[sid];
+                    p.hp = 100; p.score = 0; p.x = i === 0 ? 200 : 600; p.y = 250; i++;
+                }
+                pkRooms[roomId].bullets = []; io.to(roomId).emit('pkGameStarted', pkRooms[roomId]);
+            } else socket.emit('actionError', "Chưa đủ 2 người chơi!");
+        }
+    });
+
+    socket.on('leavePK', (roomId) => {
+        socket.leave(roomId);
+        if(pkRooms[roomId]) {
+            delete pkRooms[roomId].players[socket.id];
+            io.to(roomId).emit('actionError', "Đối thủ đã bỏ chạy khỏi phòng PK.");
+            io.to(roomId).emit('pkRoomClosed'); delete pkRooms[roomId];
+        }
+    });
+
+    socket.on('pkInput', ({ roomId, keys, aimAngle, isShooting }) => {
+        const room = pkRooms[roomId];
+        if(room && room.status === 'playing') {
+            const p = room.players[socket.id];
+            if(p && p.hp > 0) {
+                p.keys = keys;
+                if(isShooting && (!p.lastShot || Date.now() - p.lastShot > 200)) { 
+                    p.lastShot = Date.now();
+                    room.bullets.push({ x: p.x, y: p.y, vx: Math.cos(aimAngle)*18, vy: Math.sin(aimAngle)*18, ownerId: socket.id, life: 60 });
+                }
+            }
+        }
+    });
+
+    // Ngắt kết nối
+    socket.on('disconnect', () => { 
+        delete onlineUsers[currentUserId]; 
+        io.emit('userStatusChange', { userId: currentUserId, status: 'offline' }); 
+        
+        // Thoát FFA
+        delete ffaGameState.players[socket.id];
+        
+        // Thoát PK
+        for(let roomId in pkRooms) {
+            if(pkRooms[roomId].players[socket.id]) {
+                delete pkRooms[roomId].players[socket.id];
+                io.to(roomId).emit('actionError', "Đối thủ đã mất kết nối!");
+                io.to(roomId).emit('pkRoomClosed'); delete pkRooms[roomId];
+            }
+        }
+    });
 });
 
-let gameState = { players: {}, bullets: [] };
+// ====================================================================================
+// --- ĐỘNG CƠ XỬ LÝ GAME 60 FPS (VÒNG LẶP CHO CẢ 2 CHẾ ĐỘ) ---
+// ====================================================================================
+let ffaGameState = { players: {}, bullets: [] };
+let pkRooms = {};
+
 setInterval(() => {
-    gameState.bullets.forEach(b => { b.x += b.vx; b.y += b.vy; b.life--; });
-    gameState.bullets = gameState.bullets.filter(b => b.life > 0);
-    gameState.bullets.forEach((b) => {
-        for(let id in gameState.players) {
-            let p = gameState.players[id];
+    // ---- XỬ LÝ FFA GAME ----
+    for(let sid in ffaGameState.players) {
+        let p = ffaGameState.players[sid];
+        if(p.hp > 0 && p.keys) {
+            if(p.keys.w && p.y > 20) p.y -= 5;
+            if(p.keys.s && p.y < 480) p.y += 5;
+            if(p.keys.a && p.x > 20) p.x -= 5;
+            if(p.keys.d && p.x < 780) p.x += 5;
+        }
+    }
+    ffaGameState.bullets.forEach(b => { b.x += b.vx; b.y += b.vy; b.life--; });
+    ffaGameState.bullets = ffaGameState.bullets.filter(b => b.life > 0);
+    ffaGameState.bullets.forEach((b) => {
+        for(let id in ffaGameState.players) {
+            let p = ffaGameState.players[id];
             if(p && p.hp > 0 && b.ownerId !== id) {
-                let dist = Math.sqrt(Math.pow(p.x - b.x, 2) + Math.pow(p.y - b.y, 2));
+                let dist = Math.hypot(p.x - b.x, p.y - b.y);
                 if(dist < 20) { 
                     p.hp -= 20; b.life = 0; 
-                    if(p.hp <= 0 && gameState.players[b.ownerId]) {
-                        gameState.players[b.ownerId].score += 10;
-                        const db = readDB(); const shooter = db.users.find(u => u.id === gameState.players[b.ownerId].userId);
-                        if(shooter) { shooter.gameScore = gameState.players[b.ownerId].score; writeDB(db); }
-                        setTimeout(() => { if(gameState.players[id]) { gameState.players[id].hp = 100; gameState.players[id].x = Math.random() * 600 + 100; gameState.players[id].y = Math.random() * 400 + 100; } }, 3000);
+                    if(p.hp <= 0 && ffaGameState.players[b.ownerId]) {
+                        ffaGameState.players[b.ownerId].score += 10;
+                        const db = readDB(); const shooter = db.users.find(u => u.id === ffaGameState.players[b.ownerId].userId);
+                        if(shooter) { shooter.gameScore = ffaGameState.players[b.ownerId].score; writeDB(db); }
+                        setTimeout(() => { if(ffaGameState.players[id]) { ffaGameState.players[id].hp = 100; ffaGameState.players[id].x = Math.random() * 600 + 100; ffaGameState.players[id].y = Math.random() * 400 + 50; } }, 3000);
                     }
                 }
             }
         }
     });
-    io.to('gameRoom').emit('gameStateUpdate', gameState);
-}, 1000 / 30);
+    io.to('ffaGameRoom').emit('ffaStateUpdate', ffaGameState);
 
+    // ---- XỬ LÝ PK GAME ----
+    for(let roomId in pkRooms) {
+        let room = pkRooms[roomId];
+        if(room.status === 'playing') {
+            for(let sid in room.players) {
+                let p = room.players[sid];
+                if(p.hp > 0 && p.keys) {
+                    const speed = 7;
+                    if(p.keys.w && p.y > 20) p.y -= speed;
+                    if(p.keys.s && p.y < 480) p.y += speed;
+                    if(p.keys.a && p.x > 20) p.x -= speed;
+                    if(p.keys.d && p.x < 780) p.x += speed;
+                }
+            }
+            room.bullets.forEach(b => { b.x += b.vx; b.y += b.vy; b.life--; });
+            room.bullets = room.bullets.filter(b => b.life > 0);
+            room.bullets.forEach(b => {
+                for(let sid in room.players) {
+                    let p = room.players[sid];
+                    if(p.hp > 0 && b.ownerId !== sid) {
+                        let dist = Math.hypot(p.x - b.x, p.y - b.y);
+                        if(dist < 22) {
+                            p.hp -= 20; b.life = 0; 
+                            if(p.hp <= 0 && room.players[b.ownerId]) {
+                                room.players[b.ownerId].score += 10; 
+                                if(room.players[b.ownerId].score >= 100) {
+                                    room.status = 'waiting'; 
+                                    io.to(roomId).emit('pkGameOver', { winnerName: room.players[b.ownerId].name });
+                                } else {
+                                    setTimeout(() => { if(room.players[sid]) { room.players[sid].hp = 100; room.players[sid].x = Math.random() * 600 + 100; room.players[sid].y = Math.random() * 400 + 50; } }, 1500);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            io.to(roomId).emit('pkStateUpdate', room);
+        }
+    }
+}, 1000 / 60);
+
+// Đồng bộ dữ liệu gói tin cho Client
 function sendUserDataUpdate(userId, socketTarget) {
     const db = readDB(); const user = db.users.find(u => u.id === userId); if (!user) return;
     let friendsList = db.users.filter(u => user.friends.includes(u.id) || u.role === 'admin');
@@ -304,7 +484,6 @@ function sendUserDataUpdate(userId, socketTarget) {
         friendsList = db.users.filter(u => u.role !== 'admin' && (user.friends.includes(u.id) || msgIds.includes(u.id)));
     }
     socketTarget.emit('userDataPackage', {
-        // KHÔI PHỤC TÍNH NĂNG: TRẢ LẠI TRƯỜNG PHONE / EMAIL TRONG SOCKET
         friends: friendsList.map(u => ({ 
             id: u.id, username: u.username, displayName: u.displayName || u.username, role: u.role, 
             phone: u.phone, email: u.email, gender: u.gender, dob: u.dob, bio: u.bio,
@@ -319,4 +498,4 @@ function sendUserDataUpdate(userId, socketTarget) {
     });
 }
 
-server.listen(PORT, () => console.log(`Cherry Server V6.2 PRO running on port ${PORT}`));
+server.listen(PORT, () => console.log(`mtun dzai:> running on port ${PORT}`));
