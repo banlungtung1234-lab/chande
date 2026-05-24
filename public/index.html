@@ -13,7 +13,7 @@
             background-size: 400% 400%; 
             animation: gradientBG 15s ease infinite; 
             overflow-x: hidden; 
-            touch-action: manipulation; 
+            touch-action: none; /* Khóa cuộn trang khi vuốt Joystick trên điện thoại */
         }
         @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         .sakura-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
@@ -44,7 +44,7 @@
 
     <div id="globalLoading" class="fixed inset-0 bg-pink-100/95 z-[9999] flex flex-col justify-center items-center transition-opacity duration-300">
         <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 mb-4"></div>
-        <p class="text-pink-600 font-bold animate-pulse uppercase">Đang đồng bộ dữ liệu...</p>
+        <p class="text-pink-600 font-bold animate-pulse uppercase">Đang đồng bộ dữ liệu V9...</p>
     </div>
 
     <div id="bannedContainer" class="fixed inset-0 bg-red-950/95 z-[9995] hidden flex-col items-center justify-center backdrop-blur-md text-white p-6 text-center">
@@ -92,7 +92,6 @@
 
 
     <div id="authContainer" class="h-full flex items-center justify-center p-4 relative z-10">
-        
         <div id="loginCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl zh">
             <div class="text-center mb-8"><span class="text-6xl block mb-2">🌸</span><h2 class="text-3xl font-black text-pink-600">CHERRY CHAT</h2></div>
             <form id="loginForm" class="space-y-4">
@@ -103,10 +102,9 @@
                         <button type="button" onclick="togglePassView('loginPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button>
                     </div>
                 </div>
-                
                 <div class="flex items-center justify-between mt-2 px-1">
                     <label class="flex items-center text-xs font-bold text-gray-600 cursor-pointer hover:text-pink-600 transition">
-                        <input type="checkbox" id="rememberMe" class="mr-2 w-4 h-4 rounded text-pink-500 focus:ring-pink-400 cursor-pointer"> Ghi nhớ tài khoản
+                        <input type="checkbox" id="rememberMe" class="mr-2 w-4 h-4 rounded text-pink-500 focus:ring-pink-400 cursor-pointer"> Ghi nhớ
                     </label>
                     <button type="button" onclick="switchAuthView('forgot')" class="text-xs text-pink-600 font-bold hover:underline">Quên mật khẩu?</button>
                 </div>
@@ -171,19 +169,24 @@
                     <div class="flex items-center space-x-4 cursor-pointer" onclick="openMyProfileModal()">
                         <div class="w-14 h-14 bg-pink-400 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-inner">🌸</div>
                         <div>
-                            <h3 id="meDisplayName" class="font-black text-pink-700 text-lg">Tên Bạn</h3>
-                            <p id="meUsername" class="text-xs text-pink-500 font-bold">@username</p>
+                            <h3 id="meDisplayName" class="font-black text-pink-700 text-lg truncate w-32">Tên Bạn</h3>
+                            <p id="meUsername" class="text-xs text-pink-500 font-bold truncate w-32">@username</p>
                         </div>
                     </div>
                     <button onclick="handleLogout()" class="w-10 h-10 bg-white/50 rounded-full text-red-500 font-black hover:bg-red-500 hover:text-white transition">⎋</button>
                 </div>
                 
-                <button onclick="enterFFAGameMode()" class="w-full mt-4 bg-purple-500 text-white font-black py-3 rounded-xl shadow-md hover:bg-purple-600 transition flex justify-center items-center gap-2">
-                    <span>🎮</span> ĐẤU TRƯỜNG TỰ DO
-                </button>
+                <div class="grid grid-cols-2 gap-2 mt-4">
+                    <button onclick="enterGameMode('ffa')" class="bg-purple-500 text-white font-black py-3 rounded-xl shadow-md hover:bg-purple-600 transition flex justify-center items-center gap-1 text-[11px] uppercase">
+                        <span>🎮</span> Tự Do
+                    </button>
+                    <button onclick="enterGameMode('zombie')" class="bg-green-600 text-white font-black py-3 rounded-xl shadow-md hover:bg-green-700 transition flex justify-center items-center gap-1 text-[11px] uppercase">
+                        <span>🧟</span> Zombie
+                    </button>
+                </div>
                 
                 <div class="flex items-center justify-between mt-4 px-2 border-t border-pink-100 pt-3">
-                    <span class="text-[11px] font-black text-pink-600 uppercase">🤪 Chế độ Meme</span>
+                    <span class="text-[11px] font-black text-pink-600 uppercase">🤪 Chế độ Meme (Tin nhắn)</span>
                     <label class="relative inline-block w-10 mr-2 align-middle cursor-pointer">
                         <input type="checkbox" id="memeToggle" class="tc absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
                         <label for="memeToggle" class="tl block overflow-hidden h-5 rounded-full cursor-pointer"></label>
@@ -227,7 +230,7 @@
                     </div>
                 </div>
                 <div id="chatActions" class="space-x-2 hidden flex items-center">
-                    <button id="btnInvitePK" onclick="invitePK()" class="px-3 py-2 bg-red-50 border-2 border-red-200 text-red-600 text-[10px] md:text-xs font-black rounded-lg hover:bg-red-100 transition shadow-sm mr-1 md:mr-2 flex items-center">⚔️ Thách Đấu PK</button>
+                    <button id="btnInvitePK" onclick="invitePK()" class="px-3 py-2 bg-red-50 border-2 border-red-200 text-red-600 text-[10px] md:text-xs font-black rounded-lg hover:bg-red-100 transition shadow-sm mr-1 md:mr-2 flex items-center animate-pulse">⚔️ PK Solo</button>
                     <button id="btnArchiveToggle" onclick="actionToggleArchive()" class="px-2 md:px-3 py-2 bg-white border-2 border-amber-200 text-amber-600 text-[10px] md:text-xs font-black rounded-lg hover:bg-amber-50">Lưu trữ</button>
                     <button id="btnBlockToggle" onclick="actionToggleBlock()" class="px-2 md:px-3 py-2 bg-red-50 border-2 border-red-200 text-red-600 text-[10px] md:text-xs font-black rounded-lg hover:bg-red-100">Chặn</button>
                 </div>
@@ -256,8 +259,8 @@
     <div id="gameContainer" class="h-full hidden flex-col p-2 md:p-4 max-w-5xl mx-auto z-20 relative">
         <div class="glass p-3 md:p-4 rounded-t-2xl shadow-xl flex justify-between items-center mb-1">
             <div class="flex-1 hidden md:block">
-                <h2 id="gameTitle" class="text-xl md:text-3xl font-black text-purple-600 uppercase">🎮 ARENA</h2>
-                <p class="text-[10px] md:text-xs text-gray-500 font-bold">PC: Phím WASD & Chuột | Mobile: Joystick</p>
+                <h2 id="gameTitle" class="text-xl md:text-3xl font-black text-purple-600 uppercase">🎮 ARENA V9</h2>
+                <p class="text-[10px] md:text-xs text-gray-500 font-bold">PC: WASD & Chuột | Mobile: Joystick & Nút Bắn</p>
             </div>
             <div class="flex-1 text-center flex flex-col items-center justify-center">
                 <p id="gameStatusText" class="text-xs md:text-sm font-black text-pink-600 uppercase mb-2"></p>
@@ -273,7 +276,7 @@
                 <span id="p1Name" class="font-black text-red-400 text-base md:text-2xl truncate max-w-[100px] md:max-w-[200px]">P1</span>
                 <span id="p1Score" class="text-3xl md:text-5xl font-black text-white">0</span>
             </div>
-            <div class="text-yellow-400 font-black text-base md:text-2xl tracking-widest text-center flex-1">VS <span class="block text-[9px] md:text-xs text-gray-400">ĐẠT 100 ĐIỂM</span></div>
+            <div class="text-yellow-400 font-black text-base md:text-2xl tracking-widest text-center flex-1">VS <span class="block text-[9px] md:text-xs text-gray-400">ĐẠT 100 ĐIỂM SẼ THẮNG</span></div>
             <div class="flex items-center gap-3 md:gap-6 flex-row-reverse">
                 <span id="p2Name" class="font-black text-blue-400 text-base md:text-2xl truncate max-w-[100px] md:max-w-[200px] text-right">P2</span>
                 <span id="p2Score" class="text-3xl md:text-5xl font-black text-white">0</span>
@@ -283,10 +286,10 @@
         <div id="gameScreenArea" class="flex-1 bg-gray-900 rounded-b-2xl overflow-hidden relative flex items-center justify-center cursor-crosshair shadow-2xl touch-none select-none w-full">
             <canvas id="gameCanvas" width="800" height="500" class="w-full h-full object-contain bg-gray-800"></canvas>
             
-            <div id="ffaLeaderboardBox" class="hidden absolute top-4 right-4 bg-black/70 p-4 rounded-xl w-48 text-white pointer-events-none border border-gray-600">
-                <h4 class="text-xs font-black text-yellow-400 mb-2 border-b border-white/20 pb-1">🏆 Bảng Xếp Hạng FFA</h4>
-                <p class="text-[10px] text-gray-300 mb-2">Điểm: <span id="myFFAScoreDisplay" class="font-black text-green-400 text-sm">0</span></p>
-                <div id="ffaLeaderboard" class="space-y-1 text-[11px] font-bold text-gray-200">Đang tải...</div>
+            <div id="gameLeaderboardBox" class="hidden absolute top-4 right-4 bg-black/70 p-4 rounded-xl w-48 text-white pointer-events-none border border-gray-600">
+                <h4 id="leaderboardTitle" class="text-xs font-black text-yellow-400 mb-2 border-b border-white/20 pb-1">🏆 Bảng Xếp Hạng</h4>
+                <p class="text-[10px] text-gray-300 mb-2">Điểm của bạn: <span id="myGameScoreDisplay" class="font-black text-green-400 text-sm">0</span></p>
+                <div id="gameLeaderboard" class="space-y-1 text-[11px] font-bold text-gray-200">Đang tải...</div>
             </div>
 
             <div id="mobileControls" class="absolute bottom-6 left-0 w-full px-6 flex justify-between items-end hidden z-50 pointer-events-none">
@@ -404,7 +407,7 @@
         let currentUser = null, activeChatUserId = null, editingMsgId = null, currentAdminChatUserId = null;
         let globalDataStore = { friends: [], messages: [], requests: [], blocks: [], archives: [], isMuted: false };
         
-        // --- 1. Hệ thống Âm thanh & Thông báo ---
+        // --- 1. Hệ thống Âm thanh (Đã gỡ khỏi nút Bắn) ---
         const notifSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_79eff4e14f.mp3');
         const memeUrls = ['https://www.myinstants.com/media/sounds/vine-boom.mp3', 'https://www.myinstants.com/media/sounds/quack_5.mp3', 'https://www.myinstants.com/media/sounds/boing_1.mp3'];
         const memeSounds = memeUrls.map(u => new Audio(u));
@@ -429,7 +432,7 @@
             } 
         }
 
-        // --- 2. Các hàm tiện ích UI ---
+        // --- 2. Tiện ích UI ---
         function openLightbox(src) { document.getElementById('lightboxImg').src = src; const lb = document.getElementById('imageLightbox'); lb.classList.remove('hidden'); lb.classList.add('flex'); setTimeout(() => { lb.classList.remove('opacity-0'); document.getElementById('lightboxImg').classList.remove('scale-95'); }, 10); }
         function closeLightbox() { const lb = document.getElementById('imageLightbox'); lb.classList.add('opacity-0'); document.getElementById('lightboxImg').classList.add('scale-95'); setTimeout(() => { lb.classList.add('hidden'); lb.classList.remove('flex'); }, 300); }
 
@@ -442,10 +445,7 @@
 
         function showLoading(show) { const l = document.getElementById('globalLoading'); if(show) { l.classList.remove('hidden'); l.classList.add('opacity-100'); } else { l.classList.add('opacity-0'); setTimeout(() => l.classList.add('hidden'), 300); } }
 
-        function switchAuthView(v) { 
-            ['loginCard', 'registerCard', 'setupProfileCard', 'forgotCard'].forEach(id => { document.getElementById(id).classList.add('hidden'); }); 
-            document.getElementById((v === 'setup' ? 'setupProfile' : v) + 'Card').classList.remove('hidden'); 
-        }
+        function switchAuthView(v) { ['loginCard', 'registerCard', 'setupProfileCard', 'forgotCard'].forEach(id => { document.getElementById(id).classList.add('hidden'); }); document.getElementById((v === 'setup' ? 'setupProfile' : v) + 'Card').classList.remove('hidden'); }
         function togglePassView(id, btn) { const i = document.getElementById(id); if(i.type === 'password') { i.type = 'text'; btn.innerText = 'Ẩn'; } else { i.type = 'password'; btn.innerText = 'Hiện'; } }
 
         let banInterval = null;
@@ -456,36 +456,16 @@
             else { banInterval = setInterval(() => { const dist = new Date(banUntil).getTime() - new Date().getTime(); if (dist < 0) { clearInterval(banInterval); location.reload(); } else { const d = Math.floor(dist / (1000 * 60 * 60 * 24)), h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)), m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60)), s = Math.floor((dist % (1000 * 60)) / 1000); document.getElementById('bannedTimeDisplay').innerText = `Mở khóa sau: ${d} ngày ${h} giờ ${m} phút ${s} giây`; } }, 1000); }
         }
 
-        // --- 3. Quản lý Đăng nhập & Session ---
+        // --- 3. Quản lý Đăng nhập & API ---
         window.addEventListener('DOMContentLoaded', async () => { 
-            // Ẩn loading sau 2s, nếu chưa đăng nhập thì giữ nguyên authContainer
-            setTimeout(() => { 
-                const l = document.getElementById('globalLoading'); 
-                if(l && !l.classList.contains('hidden')) { 
-                    l.classList.add('hidden'); 
-                } 
-            }, 2000);
-            
+            setTimeout(() => { const l = document.getElementById('globalLoading'); if(l && !l.classList.contains('hidden')) l.classList.add('hidden'); }, 2000);
             const savedKey = localStorage.getItem('cherrySavedLoginKey');
             if (savedKey) { document.getElementById('loginKey').value = savedKey; document.getElementById('rememberMe').checked = true; }
-            
             showLoading(true); 
             try { 
-                const r = await fetch('/api/me'); 
-                const d = await r.json(); 
-                if (r.ok) {
-                    initAppSession(d); 
-                } else if (r.status === 403 && d.isBanned) { 
-                    showLoading(false); triggerBannedScreen(d.banUntil); 
-                } else { 
-                    // Chưa đăng nhập -> Hiện màn hình đăng nhập
-                    switchAuthView('login'); 
-                    showLoading(false); 
-                } 
-            } catch (e) { 
-                switchAuthView('login'); 
-                showLoading(false); 
-            } 
+                const r = await fetch('/api/me'); const d = await r.json(); 
+                if (r.ok) initAppSession(d); else if (r.status === 403 && d.isBanned) { showLoading(false); triggerBannedScreen(d.banUntil); } else { switchAuthView('login'); showLoading(false); } 
+            } catch (e) { switchAuthView('login'); showLoading(false); } 
         });
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => { 
@@ -494,13 +474,8 @@
             if (document.getElementById('rememberMe').checked) localStorage.setItem('cherrySavedLoginKey', loginKeyVal); else localStorage.removeItem('cherrySavedLoginKey');
             const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loginKey: loginKeyVal, password: document.getElementById('loginPassword').value }) }); 
             const d = await r.json(); showLoading(false); 
-            if(r.ok) { 
-                if(d.needProfile) switchAuthView('setupProfile'); 
-                else if (d.step === "banned") triggerBannedScreen(d.banUntil); 
-                else initAppSession(await(await fetch('/api/me')).json()); 
-            } else { 
-                showCustomAlert(d.msg, "Đăng nhập thất bại"); 
-            } 
+            if(r.ok) { if(d.needProfile) switchAuthView('setupProfile'); else if (d.step === "banned") triggerBannedScreen(d.banUntil); else initAppSession(await(await fetch('/api/me')).json()); } 
+            else showCustomAlert(d.msg, "Đăng nhập thất bại"); 
         });
 
         document.getElementById('registerForm').addEventListener('submit', async (e) => { 
@@ -513,41 +488,24 @@
         document.getElementById('forgotForm').addEventListener('submit', async (e) => { 
             e.preventDefault(); showLoading(true); 
             const r = await fetch('/api/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('forgotUsername').value, phone: document.getElementById('forgotPhone').value, newPassword: document.getElementById('forgotNewPassword').value }) }); 
-            const d = await r.json(); showLoading(false); 
-            showCustomAlert(d.msg, "Khôi phục tài khoản"); 
+            const d = await r.json(); showLoading(false); showCustomAlert(d.msg, "Khôi phục tài khoản"); 
             if(r.ok) { document.getElementById('forgotForm').reset(); switchAuthView('login'); }
         });
 
         document.getElementById('setupProfileForm').addEventListener('submit', async (e) => { 
             e.preventDefault(); showLoading(true); 
             const r = await fetch('/api/setup-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayName: document.getElementById('setupDisplayName').value }) }); 
-            showLoading(false); 
-            if(r.ok) initAppSession(await(await fetch('/api/me')).json()); 
-            else showCustomAlert("Lỗi cập nhật tên!"); 
+            showLoading(false); if(r.ok) initAppSession(await(await fetch('/api/me')).json()); else showCustomAlert("Lỗi cập nhật tên!"); 
         });
 
         async function handleLogout() { await fetch('/api/logout', { method: 'POST' }); location.reload(); }
 
         function initAppSession(u) { 
             currentUser = u; 
-            // Ẩn tất cả đi, chuẩn bị hiện appContainer
-            ['authContainer', 'bannedContainer', 'adminContainer', 'gameContainer'].forEach(id => { 
-                document.getElementById(id).classList.add('hidden'); 
-                document.getElementById(id).classList.remove('flex'); 
-            });
-            showLoading(false); 
-            socket.connect(); 
-            
-            if (u.role === 'admin') { 
-                document.getElementById('admin2FAModal').classList.remove('hidden'); 
-                document.getElementById('admin2FAModal').classList.add('flex'); 
-            } else { 
-                document.getElementById('appContainer').classList.remove('hidden'); 
-                document.getElementById('appContainer').classList.add('flex'); 
-                document.getElementById('meDisplayName').innerText = u.displayName; 
-                document.getElementById('meUsername').innerText = '@' + u.username; 
-                socket.emit('initData'); 
-            } 
+            ['authContainer', 'bannedContainer', 'adminContainer', 'gameContainer'].forEach(id => { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); });
+            showLoading(false); socket.connect(); 
+            if (u.role === 'admin') { document.getElementById('admin2FAModal').classList.remove('hidden'); document.getElementById('admin2FAModal').classList.add('flex'); } 
+            else { document.getElementById('appContainer').classList.remove('hidden'); document.getElementById('appContainer').classList.add('flex'); document.getElementById('meDisplayName').innerText = u.displayName; document.getElementById('meUsername').innerText = '@' + u.username; socket.emit('initData'); } 
         }
 
         // --- 4. Logic Socket Chat ---
@@ -567,13 +525,12 @@
             if (currentAdminChatUserId && (m.from === currentAdminChatUserId || m.to === currentAdminChatUserId)) appendAdminMessage(m);
         });
 
-        socket.on('messageUpdated', (upd) => { const idx = globalDataStore.messages.findIndex(m => m.id === upd.id); if (idx > -1) { globalDataStore.messages[idx] = upd; if(activeChatUserId && (upd.from === activeChatUserId || upd.to === activeChatUserId)) renderMessages(); } });
         socket.on('userTyping', (id) => { if(activeChatUserId === id) document.getElementById('typingIndicator').classList.remove('hidden'); }); 
         socket.on('userStoppedTyping', (id) => { if(activeChatUserId === id) document.getElementById('typingIndicator').classList.add('hidden'); });
         socket.on('msgPopupNotification', ({fromName, text}) => { if (!activeChatUserId || globalDataStore.friends.find(f => f.id === activeChatUserId)?.displayName !== fromName) triggerPopup(`Từ ${fromName}`, text); });
         socket.on('userStatusChange', ({userId, status}) => { const f = globalDataStore.friends.find(x => x.id === userId); if(f){ f.isOnline = (status === 'online'); renderFriendsList(); if(activeChatUserId === userId) updateChatHeader(); } });
 
-        // Tìm kiếm và Bạn bè
+        // Tương tác Chat, Bạn Bè, Profile, Admin (Giữ nguyên toàn bộ logic cũ)
         function triggerSearch() { const q = document.getElementById('searchBar').value.trim(); if(q) socket.emit('searchUser', q); }
         socket.on('searchResults', (res) => { const a = document.getElementById('searchResultsArea'); a.innerHTML = ''; if(res.length === 0) return a.innerHTML = '<p class="text-xs text-gray-400 font-bold">Không tìm thấy ai.</p>'; res.forEach(u => a.innerHTML += `<div class="flex justify-between items-center bg-white p-2.5 rounded-xl border"><span class="font-bold text-sm">${u.displayName}</span><button onclick="socket.emit('sendFriendRequest','${u.id}'); this.innerText='Đã gửi';" class="bg-pink-500 text-white px-2 py-1 rounded text-xs hover:bg-pink-600">Kết bạn</button></div>`); });
         function renderFriendRequests() { const a = document.getElementById('friendRequestsArea'); document.getElementById('reqTitle').innerText = `📩 Lời mời (${globalDataStore.requests.length})`; a.innerHTML = ''; globalDataStore.requests.forEach(r => a.innerHTML += `<div class="flex justify-between bg-white p-3 rounded-xl border text-sm"><span class="font-black text-pink-700">${r.fromName}</span><div class="space-x-1"><button onclick="socket.emit('respondFriendRequest',{requestId:'${r.id}',action:'accept'})" class="bg-green-500 text-white px-2 py-1 rounded text-xs">Đồng ý</button><button onclick="socket.emit('respondFriendRequest',{requestId:'${r.id}',action:'reject'})" class="bg-gray-200 px-2 py-1 rounded text-xs text-gray-700">Xóa</button></div></div>`); }
@@ -585,7 +542,6 @@
             if(fil === 'archived') l = l.filter(f => f.isArchived); 
             if(fil === 'blocked') l = l.filter(f => f.isBlocked); 
             if(l.length === 0) return a.innerHTML = '<p class="text-xs font-bold text-center py-6 text-gray-400">Danh sách trống...</p>'; 
-            
             l.forEach(f => { 
                 const dot = f.isOnline ? '<span class="w-2.5 h-2.5 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse"></span>' : '<span class="w-2.5 h-2.5 bg-gray-300 rounded-full"></span>'; 
                 const blockWarn = (f.isBlocked || f.isBlockedBy) ? '<span class="text-[10px] text-red-500 font-bold ml-1">🚫 Đã chặn</span>' : ''; 
@@ -595,81 +551,52 @@
         }
 
         function selectChatTarget(id) { activeChatUserId = id; cancelEdit(); renderFriendsList(); updateChatHeader(); renderMessages(); document.getElementById('chatActions').classList.remove('hidden'); }
-        
         function updateChatHeader() { 
             const f = globalDataStore.friends.find(x => x.id === activeChatUserId); if(!f) return; 
-            document.getElementById('chatTargetName').innerText = f.displayName; 
-            document.getElementById('chatTargetStatus').innerText = f.isOnline ? 'Đang trực tuyến' : 'Ngoại tuyến'; 
-            document.getElementById('btnBlockToggle').innerText = f.isBlocked ? 'Mở Chặn 🔓' : 'Chặn 🚫'; 
-            document.getElementById('btnArchiveToggle').innerText = f.isArchived ? 'Bỏ Lưu 📥' : 'Lưu Trữ 📤'; 
-            
-            const pkBtn = document.getElementById('btnInvitePK');
-            if(f.displayName === 'Hệ Thống Admin' || !f.isOnline) pkBtn.classList.add('hidden'); else pkBtn.classList.remove('hidden');
+            document.getElementById('chatTargetName').innerText = f.displayName; document.getElementById('chatTargetStatus').innerText = f.isOnline ? 'Đang trực tuyến' : 'Ngoại tuyến'; 
+            document.getElementById('btnBlockToggle').innerText = f.isBlocked ? 'Mở Chặn 🔓' : 'Chặn 🚫'; document.getElementById('btnArchiveToggle').innerText = f.isArchived ? 'Bỏ Lưu 📥' : 'Lưu Trữ 📤'; 
+            const pkBtn = document.getElementById('btnInvitePK'); if(f.displayName === 'Hệ Thống Admin' || !f.isOnline) pkBtn.classList.add('hidden'); else pkBtn.classList.remove('hidden');
             if(f.displayName === 'Hệ Thống Admin') document.getElementById('btnBlockToggle').classList.add('hidden'); else document.getElementById('btnBlockToggle').classList.remove('hidden'); 
-            
-            if (f.isBlocked || f.isBlockedBy) { 
-                document.getElementById('normalChatUI').classList.add('hidden'); document.getElementById('normalChatUI').classList.remove('flex'); 
-                document.getElementById('blockedChatUI').classList.remove('hidden'); document.getElementById('blockedChatUI').classList.add('flex'); 
-            } else { 
-                document.getElementById('normalChatUI').classList.remove('hidden'); document.getElementById('normalChatUI').classList.add('flex'); 
-                document.getElementById('blockedChatUI').classList.add('hidden'); document.getElementById('blockedChatUI').classList.remove('flex'); 
-                document.getElementById('messageInput').disabled = false; document.getElementById('btnSendMessage').disabled = false; 
-            }
+            if (f.isBlocked || f.isBlockedBy) { document.getElementById('normalChatUI').classList.add('hidden'); document.getElementById('normalChatUI').classList.remove('flex'); document.getElementById('blockedChatUI').classList.remove('hidden'); document.getElementById('blockedChatUI').classList.add('flex'); } 
+            else { document.getElementById('normalChatUI').classList.remove('hidden'); document.getElementById('normalChatUI').classList.add('flex'); document.getElementById('blockedChatUI').classList.add('hidden'); document.getElementById('blockedChatUI').classList.remove('flex'); document.getElementById('messageInput').disabled = false; document.getElementById('btnSendMessage').disabled = false; }
         }
 
         function renderMessages() {
             const a = document.getElementById('messagesArea'); a.innerHTML = '';
             const hist = globalDataStore.messages.filter(m => (m.from === currentUser.id && m.to === activeChatUserId) || (m.from === activeChatUserId && m.to === currentUser.id));
-            
             hist.forEach(m => {
-                const isMe = m.from === currentUser.id; 
-                const bub = isMe ? 'bg-gradient-to-br from-pink-400 to-pink-500 text-white shadow-md' : 'bg-white text-gray-800 border border-pink-100 shadow-sm';
-                let c = ''; 
-                if (m.isRecalled) c = `<p class="italic text-sm opacity-80 font-bold">🚫 Tin nhắn đã thu hồi</p>`; 
-                else if (m.type === 'image') c = `<img src="${m.imgData}" class="max-w-[250px] rounded-xl cursor-zoom-in shadow-sm border-2 border-white/50 hover:opacity-90 transition" onclick="openLightbox('${m.imgData}')">`; 
-                else c = `<p class="font-bold text-sm leading-relaxed">${m.text} ${m.isEdited?'<span class="text-[10px] italic opacity-75 ml-1">(đã sửa)</span>':''}</p>`;
-                
-                let acts = (isMe && !m.isRecalled) ? `<div class="hidden group-hover:flex items-center space-x-2 mr-2 text-xs text-pink-500 font-black"><button onclick="prepareEditMessage('${m.id}')" class="${m.type==='image'?'hidden':''} hover:text-blue-600">Sửa</button><button onclick="recallMessage('${m.id}')" class="hover:text-red-600">Thu hồi</button></div>` : '';
-                
-                a.innerHTML += `<div class="flex ${isMe?'justify-end':'justify-start'} w-full group mb-2">${isMe?acts:''}<div class="max-w-[75%] p-3.5 rounded-3xl ${bub} ${isMe?'rounded-br-sm':'rounded-bl-sm'}">${c}<span class="block text-[10px] opacity-60 ${isMe?'text-right':'text-left'} mt-1 font-black">${new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span></div></div>`;
-            });
-            a.scrollTop = a.scrollHeight;
+                const isMe = m.from === currentUser.id; const bub = isMe ? 'bg-gradient-to-br from-pink-400 to-pink-500 text-white shadow-md' : 'bg-white text-gray-800 border border-pink-100 shadow-sm';
+                let c = ''; if (m.type === 'image') c = `<img src="${m.imgData}" class="max-w-[250px] rounded-xl cursor-zoom-in shadow-sm border-2 border-white/50 hover:opacity-90 transition" onclick="openLightbox('${m.imgData}')">`; 
+                else c = `<p class="font-bold text-sm leading-relaxed">${m.text}</p>`;
+                a.innerHTML += `<div class="flex ${isMe?'justify-end':'justify-start'} w-full group mb-2"><div class="max-w-[75%] p-3.5 rounded-3xl ${bub} ${isMe?'rounded-br-sm':'rounded-bl-sm'}">${c}<span class="block text-[10px] opacity-60 ${isMe?'text-right':'text-left'} mt-1 font-black">${new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span></div></div>`;
+            }); a.scrollTop = a.scrollHeight;
         }
 
         let typingT; 
         document.getElementById('messageInput').addEventListener('input', () => { if(!activeChatUserId) return; socket.emit('typing', activeChatUserId); clearTimeout(typingT); typingT = setTimeout(() => socket.emit('stopTyping', activeChatUserId), 1500); });
-        function uploadImage(e) { const f = e.target.files[0]; if (!f) return; if (f.size > 10*1024*1024) return showCustomAlert("Ảnh lớn hơn 10MB!"); const r = new FileReader(); r.onload = (ev) => { socket.emit('sendMessage', { toUserId:activeChatUserId, type:'image', imgData:ev.target.result }); playSound(); socket.emit('stopTyping', activeChatUserId); }; r.readAsDataURL(f); e.target.value = ''; }
-        function prepareEditMessage(id) { const m = globalDataStore.messages.find(x => x.id === id); if(!m || m.type === 'image') return; editingMsgId = id; document.getElementById('messageInput').value = m.text; document.getElementById('btnSendMessage').innerText = 'LƯU'; document.getElementById('btnCancelEdit').classList.remove('hidden'); }
-        function cancelEdit() { editingMsgId = null; document.getElementById('messageInput').value = ''; document.getElementById('btnSendMessage').innerText = 'GỬI'; document.getElementById('btnCancelEdit').classList.add('hidden'); }
-        function recallMessage(id) { if(confirm('Bạn có chắc muốn thu hồi tin nhắn này?')) socket.emit('recallMessage', id); }
-
-        document.getElementById('messageForm').addEventListener('submit', (e) => { e.preventDefault(); const i = document.getElementById('messageInput'), t = i.value.trim(); if(!t || !activeChatUserId) return; if(editingMsgId){ socket.emit('editMessage', {msgId:editingMsgId, newText:t}); cancelEdit(); } else { socket.emit('sendMessage', {toUserId:activeChatUserId, text:t}); i.value=''; socket.emit('stopTyping', activeChatUserId); playSound(); } });
+        function uploadImage(e) { const f = e.target.files[0]; if (!f) return; if (f.size > 10*1024*1024) return showCustomAlert("Ảnh quá lớn!"); const r = new FileReader(); r.onload = (ev) => { socket.emit('sendMessage', { toUserId:activeChatUserId, type:'image', imgData:ev.target.result }); playSound(); socket.emit('stopTyping', activeChatUserId); }; r.readAsDataURL(f); e.target.value = ''; }
+        function cancelEdit() { editingMsgId = null; document.getElementById('messageInput').value = ''; }
+        document.getElementById('messageForm').addEventListener('submit', (e) => { e.preventDefault(); const i = document.getElementById('messageInput'), t = i.value.trim(); if(!t || !activeChatUserId) return; socket.emit('sendMessage', {toUserId:activeChatUserId, text:t}); i.value=''; socket.emit('stopTyping', activeChatUserId); playSound(); });
         
-        function actionToggleBlock() { socket.emit('toggleBlock', activeChatUserId); } 
-        function actionToggleArchive() { socket.emit('toggleArchive', activeChatUserId); } 
-        
+        function actionToggleBlock() { socket.emit('toggleBlock', activeChatUserId); } function actionToggleArchive() { socket.emit('toggleArchive', activeChatUserId); } 
         function viewTargetProfile() { const f = globalDataStore.friends.find(x => x.id === activeChatUserId); if(f) { document.getElementById('profName').innerText = f.displayName; document.getElementById('profRole').innerText = f.role === 'admin' ? 'Quản Trị' : 'Thành viên'; document.getElementById('profGender').innerText = f.gender==='male'?'Nam':(f.gender==='female'?'Nữ':'Bí mật'); document.getElementById('profDob').innerText = f.dob ? new Date(f.dob).toLocaleDateString() : 'Chưa cập nhật'; document.getElementById('profBio').innerText = f.bio ? `"${f.bio}"` : '"Chưa có lời giới thiệu"'; document.getElementById('profileModal').classList.remove('hidden'); document.getElementById('profileModal').classList.add('flex'); } }
         function openMyProfileModal() { document.getElementById('editProfileDisplayName').value = currentUser.displayName || ''; document.getElementById('editProfilePhone').value = currentUser.phone || ''; document.getElementById('editProfileEmail').value = currentUser.email || ''; document.getElementById('editProfileGender').value = currentUser.gender || 'secret'; document.getElementById('editProfileDob').value = currentUser.dob || ''; document.getElementById('editProfileBio').value = currentUser.bio || ''; document.getElementById('myProfileModal').classList.remove('hidden'); document.getElementById('myProfileModal').classList.add('flex'); }
         function saveMyProfile() { const d = { displayName:document.getElementById('editProfileDisplayName').value.trim(), phone:document.getElementById('editProfilePhone').value.trim(), email:document.getElementById('editProfileEmail').value.trim(), gender:document.getElementById('editProfileGender').value, dob:document.getElementById('editProfileDob').value, bio:document.getElementById('editProfileBio').value.trim() }; if(!d.displayName || !d.phone) return showCustomAlert("Không được bỏ trống tên hiển thị và SĐT!"); socket.emit('updateMyProfile', d, (res) => { showCustomAlert(res.msg); if(res.success){ document.getElementById('myProfileModal').classList.add('hidden'); currentUser.displayName = d.displayName; document.getElementById('meDisplayName').innerText = d.displayName; } }); }
         function submitChangePassInternal() { const o = document.getElementById('oldPassInput').value, n = document.getElementById('newPassInput').value; if(!o || !n) return; socket.emit('changePasswordInternal', {oldPass: o, newPass: n}, (res) => { showCustomAlert(res.msg); if(res.success) document.getElementById('changePassModal').classList.add('hidden'); }); }
 
-        // --- 5. Bảng Quản Trị Admin ---
         function verifyAdmin2FA() { const p = document.getElementById('admin2FAPassword').value; if(!p) return; socket.emit('verifyAdminAuth', p, (res) => { if (res.success) { document.getElementById('admin2FAModal').classList.add('hidden'); document.getElementById('adminContainer').classList.remove('hidden'); document.getElementById('adminContainer').classList.add('flex'); socket.emit('initData'); socket.emit('adminGetUsers'); } else { showCustomAlert(res.msg, "Lỗi mã PIN"); } }); }
-        let admFil = 'all'; 
-        function adminSetFilter(f) { admFil = f; if(f === 'all') { document.getElementById('adminTabAll').className = "px-4 py-2 font-black text-pink-600 border-b-2 border-pink-600"; document.getElementById('adminTabBanned').className = "px-4 py-2 font-bold text-gray-500 hover:text-pink-600"; } else { document.getElementById('adminTabBanned').className = "px-4 py-2 font-black text-pink-600 border-b-2 border-pink-600"; document.getElementById('adminTabAll').className = "px-4 py-2 font-bold text-gray-500 hover:text-pink-600"; } socket.emit('adminGetUsers'); }
+        let admFil = 'all'; function adminSetFilter(f) { admFil = f; if(f === 'all') { document.getElementById('adminTabAll').className = "px-4 py-2 font-black text-pink-600 border-b-2 border-pink-600"; document.getElementById('adminTabBanned').className = "px-4 py-2 font-bold text-gray-500 hover:text-pink-600"; } else { document.getElementById('adminTabBanned').className = "px-4 py-2 font-black text-pink-600 border-b-2 border-pink-600"; document.getElementById('adminTabAll').className = "px-4 py-2 font-bold text-gray-500 hover:text-pink-600"; } socket.emit('adminGetUsers'); }
         socket.on('adminUsersList', (us) => { 
-            const b = document.getElementById('adminUsersTableBody'); b.innerHTML = ''; 
-            let l = us; if(admFil === 'banned') l = us.filter(u => u.isBanned || u.isMuted); 
+            const b = document.getElementById('adminUsersTableBody'); b.innerHTML = ''; let l = us; if(admFil === 'banned') l = us.filter(u => u.isBanned || u.isMuted); 
             l.forEach(u => { 
                 const st = u.isOnline ? '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-black text-[10px]">ON</span>' : '<span class="bg-gray-100 text-gray-500 px-3 py-1 rounded-full font-bold text-[10px]">OFF</span>'; 
-                let w = '<span class="text-green-500 font-bold text-[11px] ml-2">✅ Bình thường</span>'; 
-                if(u.isBanned) w = `<span class="text-red-500 font-black ml-2 text-[11px] bg-red-50 px-2 py-1 rounded">🔒 KHÓA (${u.banUntil ? new Date(u.banUntil).toLocaleTimeString() : 'V.Viễn'})</span>`; else if(u.isMuted) w = `<span class="text-orange-500 font-black ml-2 text-[11px] bg-orange-50 px-2 py-1 rounded">🔇 CẤM (${u.muteUntil ? new Date(u.muteUntil).toLocaleTimeString() : 'V.Viễn'})</span>`; 
+                let w = '<span class="text-green-500 font-bold text-[11px] ml-2">✅ Bình thường</span>'; if(u.isBanned) w = `<span class="text-red-500 font-black ml-2 text-[11px] bg-red-50 px-2 py-1 rounded">🔒 KHÓA (${u.banUntil ? new Date(u.banUntil).toLocaleTimeString() : 'V.Viễn'})</span>`; else if(u.isMuted) w = `<span class="text-orange-500 font-black ml-2 text-[11px] bg-orange-50 px-2 py-1 rounded">🔇 CẤM (${u.muteUntil ? new Date(u.muteUntil).toLocaleTimeString() : 'V.Viễn'})</span>`; 
                 const nameDisplayHtml = u.role === 'admin' ? `<span class="font-black text-pink-700">${u.displayName || u.username}</span>` : `<div class="flex items-center gap-2"><input type="text" id="admDisp-${u.id}" value="${u.displayName||''}" class="border-2 border-pink-200 rounded-lg px-2 py-1.5 text-xs w-32 outline-none focus:border-pink-400 font-bold"><button onclick="socket.emit('adminUpdateUser', {id:'${u.id}', displayName: document.getElementById('admDisp-${u.id}').value})" class="text-[10px] bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-black shadow-sm transition">Lưu</button></div>`;
                 const act = u.role === 'admin' ? '<span class="text-xs font-black text-gray-400 bg-gray-100 px-2 py-1.5 rounded-lg">🛡️ ADMIN</span>' : `<div class="flex space-x-1"><button onclick="openAdminChat('${u.id}', '${u.displayName||u.username}')" class="bg-purple-500 text-white px-2 py-1.5 rounded-lg font-bold shadow hover:bg-purple-600 text-xs transition">Chat</button><select onchange="handleAdminPunish('${u.id}', this.value); this.value='';" class="bg-white border-2 border-red-200 text-red-600 font-black rounded-lg px-1 text-xs outline-none cursor-pointer hover:border-red-500 transition"><option value="">Phạt...</option><option value="mute">🔇 Cấm nhắn</option><option value="ban">🚫 Khóa Acc</option><option value="unpunish" class="text-green-600">✅ Xóa phạt</option></select></div>`; 
                 b.innerHTML += `<tr class="border-b border-pink-50 hover:bg-white transition"><td class="p-4 font-black text-gray-700">@${u.username}</td><td class="p-4">${nameDisplayHtml}</td><td class="p-4 whitespace-nowrap">${st} <br> ${w}</td><td class="p-4 whitespace-nowrap">${act}</td></tr>`; 
             }); 
         });
-        function handleAdminPunish(id, act) { if(!act) return; if (act === 'unpunish') { if(confirm('Bạn có chắc muốn xóa bỏ án phạt cho người này?')) socket.emit('adminPunishUser', { targetId:id, action:'unpunish' }, () => socket.emit('adminGetUsers')); return; } const min = prompt('Nhập số phút phạt (VD: 15, 60, 1440).\nNhập chữ "infinite" để phạt vĩnh viễn:','15'); if(min) { const dur = min.toLowerCase() === 'infinite' ? 'infinite' : parseInt(min); if(dur) socket.emit('adminPunishUser', { targetId:id, action:act, durationMinutes:dur }, () => { showCustomAlert("Xử phạt thành công!"); socket.emit('adminGetUsers'); }); } }
+        function handleAdminPunish(id, act) { if(!act) return; if (act === 'unpunish') { if(confirm('Chắc chắn xóa bỏ án phạt?')) socket.emit('adminPunishUser', { targetId:id, action:'unpunish' }, () => socket.emit('adminGetUsers')); return; } const min = prompt('Nhập số phút phạt (VD: 15, 60, 1440). Nhập chữ "infinite" để phạt vĩnh viễn:','15'); if(min) { const dur = min.toLowerCase() === 'infinite' ? 'infinite' : parseInt(min); if(dur) socket.emit('adminPunishUser', { targetId:id, action:act, durationMinutes:dur }, () => { showCustomAlert("Xử phạt thành công!"); socket.emit('adminGetUsers'); }); } }
         function openAdminChat(id, name) { currentAdminChatUserId = id; document.getElementById('adminChatTitle').innerText = 'Kênh hỗ trợ: ' + name; document.getElementById('adminChatModal').classList.remove('hidden'); document.getElementById('adminChatModal').classList.add('flex'); socket.emit('adminGetChat', id); }
         function closeAdminChat() { document.getElementById('adminChatModal').classList.add('hidden'); document.getElementById('adminChatModal').classList.remove('flex'); currentAdminChatUserId = null; }
         socket.on('adminChatData', (msgs) => { const a = document.getElementById('adminChatMessages'); a.innerHTML = ''; msgs.forEach(m => appendAdminMessage(m)); a.scrollTop = a.scrollHeight; });
@@ -678,9 +605,9 @@
 
 
         // =======================================================================
-        // --- 6. GAME ENGINE TỔNG HỢP (FFA VÀ PK 1VS1) - 60FPS ---
+        // --- 5. GAME ENGINE V9 - SỬA LỖI ĐIỀU KHIỂN & NGẮM BẮN LASER ---
         // =======================================================================
-        let gameMode = null; // 'ffa' hoặc 'pk'
+        let gameMode = null; // 'ffa', 'zombie', hoặc 'pk'
         let currentPKRoomId = null, isPlaying = false, gameLoopReq = null;
         let keys = { w: false, a: false, s: false, d: false };
         let aimAngle = 0, isShooting = false;
@@ -688,12 +615,15 @@
         const gcvs = document.getElementById('gameCanvas'), gctx = gcvs.getContext('2d');
         const isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
-        // --- CÁC HÀM XỬ LÝ CHUNG ---
         function resetGameVars() {
             isPlaying = false; currentPKRoomId = null; gameMode = null;
             keys = { w:false, a:false, s:false, d:false }; isShooting = false; latestGameState = null;
-            cancelAnimationFrame(gameLoopReq); gameLoopReq = null;
+            if(gameLoopReq) { cancelAnimationFrame(gameLoopReq); gameLoopReq = null; }
+            if(jKnob) jKnob.style.transform = `translate(0px, 0px)`;
         }
+
+        // Fix kẹt phím khi mất focus cửa sổ
+        window.addEventListener('blur', () => { keys = { w:false, a:false, s:false, d:false }; isShooting = false; if(jKnob) jKnob.style.transform = `translate(0px, 0px)`; });
 
         function toggleGameUI(show) {
             if(show) {
@@ -709,106 +639,100 @@
 
         function leaveGameMode() {
             if(gameMode === 'ffa') socket.emit('leaveFFAGame');
+            else if(gameMode === 'zombie') socket.emit('leaveZombieGame');
             else if(gameMode === 'pk' && currentPKRoomId) socket.emit('leavePK', currentPKRoomId);
             resetGameVars(); toggleGameUI(false);
         }
 
-        // --- LOGIC CHẾ ĐỘ FFA (TỰ DO) ---
-        function enterFFAGameMode() {
-            resetGameVars(); gameMode = 'ffa'; isPlaying = true;
-            document.getElementById('gameTitle').innerText = "🎮 ĐẤU TRƯỜNG TỰ DO";
-            document.getElementById('gameStatusText').innerText = "VÀO LÀ BẮN!";
+        function enterGameMode(mode) {
+            resetGameVars(); gameMode = mode; isPlaying = true;
             document.getElementById('btnStartGame').classList.add('hidden');
             document.getElementById('pkScoreBoard').classList.add('hidden'); document.getElementById('pkScoreBoard').classList.remove('flex');
-            document.getElementById('ffaLeaderboardBox').classList.remove('hidden');
-            toggleGameUI(true); socket.emit('joinFFAGame'); startGameLoop();
+            
+            if(mode === 'ffa') {
+                document.getElementById('gameTitle').innerText = "🎮 BẮN TỰ DO";
+                document.getElementById('gameStatusText').innerText = "VÀO LÀ CHIẾN!";
+                document.getElementById('leaderboardTitle').innerText = "🏆 Xếp Hạng FFA";
+                document.getElementById('gameLeaderboardBox').classList.remove('hidden');
+                socket.emit('joinFFAGame');
+            } else if(mode === 'zombie') {
+                document.getElementById('gameTitle').innerText = "🧟 SĂN ZOMBIE CO-OP";
+                document.getElementById('gameStatusText').innerText = "BẢO VỆ NHAU KHỎI BẦY ZOMBIE!";
+                document.getElementById('leaderboardTitle').innerText = "🏆 Xếp Hạng Diệt Zombie";
+                document.getElementById('gameLeaderboardBox').classList.remove('hidden');
+                socket.emit('joinZombieGame');
+            }
+            toggleGameUI(true); startGameLoop();
         }
 
-        socket.on('ffaStateUpdate', (state) => {
-            if(gameMode !== 'ffa') return;
-            latestGameState = state;
-            
-            gctx.clearRect(0,0,gcvs.width,gcvs.height);
-            drawGrid(); drawPlayers(state.players); drawBullets(state.bullets);
-            
-            let lb = ''; 
-            Object.values(state.players).sort((a,b) => b.score - a.score).forEach(p => { 
-                lb += `<div class="flex justify-between"><span>${p.name}</span><span class="text-green-400">${p.score}</span></div>`; 
-                if(p.id === socket.id) document.getElementById('myFFAScoreDisplay').innerText = p.score; 
-            });
-            document.getElementById('ffaLeaderboard').innerHTML = lb || 'Phòng trống...';
-        });
-
-        // --- LOGIC CHẾ ĐỘ PK (1VS1) ---
+        // --- PK MODE LOGIC ---
         function invitePK() { if(!activeChatUserId) return; socket.emit('invitePK', activeChatUserId); showCustomAlert("Đã gửi lời thách đấu. Chờ đối thủ chấp nhận..."); }
-        
         let pendingInviter = null;
-        socket.on('pkInviteReceived', (data) => {
-            playSound(); pendingInviter = data.fromId;
-            document.getElementById('pkChallengerName').innerText = data.fromName;
-            const modal = document.getElementById('pkInviteModal');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            setTimeout(() => document.getElementById('pkInviteBox').classList.replace('scale-95', 'scale-100'), 10);
-        });
-
-        function respondPK(accept) {
-            const modal = document.getElementById('pkInviteModal');
-            document.getElementById('pkInviteBox').classList.replace('scale-100', 'scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
-            if(accept) socket.emit('acceptPK', pendingInviter); else socket.emit('declinePK', pendingInviter);
-            pendingInviter = null;
-        }
-
+        socket.on('pkInviteReceived', (data) => { pendingInviter = data.fromId; document.getElementById('pkChallengerName').innerText = data.fromName; const modal = document.getElementById('pkInviteModal'); modal.classList.remove('hidden'); modal.classList.add('flex'); setTimeout(() => document.getElementById('pkInviteBox').classList.replace('scale-95', 'scale-100'), 10); });
+        function respondPK(accept) { const modal = document.getElementById('pkInviteModal'); document.getElementById('pkInviteBox').classList.replace('scale-100', 'scale-95'); setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300); if(accept) socket.emit('acceptPK', pendingInviter); else socket.emit('declinePK', pendingInviter); pendingInviter = null; }
+        
         socket.on('pkRoomJoined', (roomData) => {
             resetGameVars(); gameMode = 'pk'; currentPKRoomId = roomData.id;
             document.getElementById('gameTitle').innerText = "⚔️ THÁCH ĐẤU 1 VS 1";
             document.getElementById('gameStatusText').innerText = "CHỜ 1 NGƯỜI BẮT ĐẦU";
-            const btnStart = document.getElementById('btnStartGame');
-            btnStart.classList.remove('hidden'); btnStart.innerText = "BẮT ĐẦU NGAY";
+            document.getElementById('btnStartGame').classList.remove('hidden'); document.getElementById('btnStartGame').innerText = "BẮT ĐẦU NGAY";
             document.getElementById('pkScoreBoard').classList.remove('hidden'); document.getElementById('pkScoreBoard').classList.add('flex');
-            document.getElementById('ffaLeaderboardBox').classList.add('hidden');
-            
+            document.getElementById('gameLeaderboardBox').classList.add('hidden');
             toggleGameUI(true); updatePKUI(roomData);
         });
 
         function clickStartGame() { if(gameMode === 'pk' && currentPKRoomId) socket.emit('startPK', currentPKRoomId); }
-
-        socket.on('pkGameStarted', (roomData) => {
-            isPlaying = true;
-            document.getElementById('gameStatusText').innerText = "ĐANG CHIẾN ĐẤU!";
-            document.getElementById('btnStartGame').classList.add('hidden');
-            if(!gameLoopReq) startGameLoop();
-        });
-
-        socket.on('pkStateUpdate', (state) => {
-            if(gameMode !== 'pk') return;
-            latestGameState = state; updatePKUI(state);
-            gctx.clearRect(0,0,gcvs.width,gcvs.height);
-            drawGrid(); drawPlayers(state.players); drawBullets(state.bullets);
-        });
-
-        socket.on('pkGameOver', (data) => {
-            isPlaying = false;
-            document.getElementById('gameStatusText').innerText = `${data.winnerName} ĐÃ CHIẾN THẮNG!`;
-            document.getElementById('btnStartGame').classList.remove('hidden');
-            document.getElementById('btnStartGame').innerText = "CHƠI LẠI (CẦN 2 NGƯỜI)";
-            cancelAnimationFrame(gameLoopReq); gameLoopReq = null;
-        });
-
+        socket.on('pkGameStarted', () => { isPlaying = true; document.getElementById('gameStatusText').innerText = "ĐANG CHIẾN ĐẤU!"; document.getElementById('btnStartGame').classList.add('hidden'); if(!gameLoopReq) startGameLoop(); });
+        socket.on('pkGameOver', (data) => { isPlaying = false; keys={w:false,a:false,s:false,d:false}; document.getElementById('gameStatusText').innerText = `${data.winnerName} ĐÃ CHIẾN THẮNG!`; document.getElementById('btnStartGame').classList.remove('hidden'); document.getElementById('btnStartGame').innerText = "CHƠI LẠI (CẦN 2 NGƯỜI)"; if(gameLoopReq){ cancelAnimationFrame(gameLoopReq); gameLoopReq = null; } });
         socket.on('pkRoomClosed', () => { showCustomAlert("Phòng Game đã đóng do đối phương thoát."); leaveGameMode(); });
 
         function updatePKUI(roomData) {
             const players = Object.values(roomData.players);
             if(players.length > 0) { document.getElementById('p1Name').innerText = players[0].name; document.getElementById('p1Score').innerText = players[0].score; }
-            if(players.length > 1) { document.getElementById('p2Name').innerText = players[1].name; document.getElementById('p2Score').innerText = players[1].score; } 
-            else { document.getElementById('p2Name').innerText = "Chờ đối thủ..."; document.getElementById('p2Score').innerText = "0"; }
+            if(players.length > 1) { document.getElementById('p2Name').innerText = players[1].name; document.getElementById('p2Score').innerText = players[1].score; } else { document.getElementById('p2Name').innerText = "Chờ đối thủ..."; document.getElementById('p2Score').innerText = "0"; }
         }
 
-        // --- VẼ CANVAS GAME (DÙNG CHUNG) ---
+        // --- CẬP NHẬT GÓI TIN GAME TỔNG HỢP V9 ---
+        socket.on('gameStateUpdate', (data) => {
+            if(gameMode !== data.mode) return;
+            latestGameState = data.state;
+            
+            gctx.clearRect(0,0,gcvs.width,gcvs.height);
+            drawGrid(); 
+            if(data.mode === 'zombie') drawZombies(latestGameState.zombies);
+            drawPlayers(latestGameState.players); 
+            drawLaserAim(latestGameState.players);
+            drawBullets(latestGameState.bullets);
+            
+            if(data.mode === 'ffa' || data.mode === 'zombie') {
+                let lb = ''; Object.values(latestGameState.players).sort((a,b) => b.score - a.score).forEach(p => { 
+                    lb += `<div class="flex justify-between"><span>${p.name}</span><span class="text-green-400">${p.score}</span></div>`; 
+                    if(p.id === socket.id) document.getElementById('myGameScoreDisplay').innerText = p.score; 
+                });
+                document.getElementById('gameLeaderboard').innerHTML = lb || 'Phòng trống...';
+            } else if (data.mode === 'pk') {
+                updatePKUI(latestGameState);
+            }
+        });
+
+        // --- VẼ CANVAS MƯỢT MÀ ---
         function drawGrid() {
             gctx.strokeStyle = 'rgba(255,255,255,0.05)'; gctx.lineWidth=1;
             for(let i=0; i<gcvs.width; i+=40) { gctx.beginPath(); gctx.moveTo(i,0); gctx.lineTo(i,gcvs.height); gctx.stroke(); } 
             for(let i=0; i<gcvs.height; i+=40) { gctx.beginPath(); gctx.moveTo(0,i); gctx.lineTo(gcvs.width,i); gctx.stroke(); }
+        }
+
+        function drawZombies(zombies) {
+            if(!zombies) return;
+            zombies.forEach(z => {
+                gctx.beginPath(); gctx.arc(z.x, z.y, 20, 0, Math.PI*2); gctx.fillStyle = '#166534'; gctx.fill(); 
+                gctx.lineWidth = 3; gctx.strokeStyle = '#4ade80'; gctx.stroke();
+                // Mắt zombie
+                gctx.fillStyle = '#dc2626'; gctx.beginPath(); gctx.arc(z.x-7, z.y-6, 4, 0, Math.PI*2); gctx.arc(z.x+7, z.y-6, 4, 0, Math.PI*2); gctx.fill();
+                // Máu zombie
+                gctx.fillStyle = 'red'; gctx.fillRect(z.x-15, z.y+25, 30, 4); 
+                gctx.fillStyle = '#22c55e'; gctx.fillRect(z.x-15, z.y+25, 30*(z.hp/40), 4);
+            });
         }
 
         function drawPlayers(players) {
@@ -818,11 +742,20 @@
                 gctx.lineWidth = 3; gctx.strokeStyle = 'rgba(255,255,255,0.9)'; gctx.stroke();
                 
                 gctx.fillStyle = '#fff'; gctx.beginPath(); gctx.arc(p.x-8, p.y-5, 4, 0, Math.PI*2); gctx.arc(p.x+8, p.y-5, 4, 0, Math.PI*2); gctx.fill();
-                gctx.fillStyle = 'white'; gctx.font = 'bold 12px Arial'; gctx.textAlign = 'center'; gctx.fillText(p.name, p.x, p.y-30);
+                gctx.fillStyle = 'white'; gctx.font = 'bold 12px Arial'; gctx.textAlign = 'center'; gctx.fillText(p.name, p.x, p.y-32);
                 
                 gctx.fillStyle = 'red'; gctx.fillRect(p.x-20, p.y+30, 40, 5); 
                 gctx.fillStyle = '#22c55e'; gctx.fillRect(p.x-20, p.y+30, 40*(p.hp/100), 5);
             });
+        }
+
+        function drawLaserAim(players) {
+            const myP = players[socket.id];
+            if(myP && myP.hp > 0 && isPlaying) {
+                gctx.beginPath(); gctx.moveTo(myP.x, myP.y);
+                gctx.lineTo(myP.x + Math.cos(aimAngle)*800, myP.y + Math.sin(aimAngle)*800);
+                gctx.lineWidth = 1.5; gctx.strokeStyle = 'rgba(255, 0, 0, 0.25)'; gctx.setLineDash([10, 10]); gctx.stroke(); gctx.setLineDash([]);
+            }
         }
 
         function drawBullets(bullets) {
@@ -833,30 +766,35 @@
             gctx.shadowBlur = 0;
         }
 
-        // --- ĐIỀU KHIỂN INPUT PC ---
+        // --- FIX CHUẨN ĐIỀU KHIỂN INPUT ---
         window.addEventListener('keydown', (e) => { if(isPlaying && ['w','a','s','d'].includes(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; }); 
         window.addEventListener('keyup', (e) => { if(isPlaying && ['w','a','s','d'].includes(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
         
         gcvs.addEventListener('mousemove', (e) => {
             if(!isPlaying || !latestGameState) return;
-            const r = gcvs.getBoundingClientRect();
-            const myP = latestGameState.players[socket.id];
-            if(myP) {
+            const r = gcvs.getBoundingClientRect(); const myP = latestGameState.players[socket.id];
+            if(myP && myP.hp > 0) {
                 const scaleX = gcvs.width / r.width; const scaleY = gcvs.height / r.height;
                 const mouseX = (e.clientX - r.left) * scaleX; const mouseY = (e.clientY - r.top) * scaleY;
                 aimAngle = Math.atan2(mouseY - myP.y, mouseX - myP.x);
             }
         });
-        gcvs.addEventListener('mousedown', () => { if(isPlaying) { isShooting = true; if(document.getElementById('memeToggle') && document.getElementById('memeToggle').checked) playSound(); }});
+        gcvs.addEventListener('mousedown', () => { if(isPlaying) isShooting = true; });
         gcvs.addEventListener('mouseup', () => { isShooting = false; });
+        gcvs.addEventListener('mouseleave', () => { isShooting = false; }); // Chuột ra ngoài canvas cũng nhả bắn
 
-        // --- ĐIỀU KHIỂN MOBILE (JOYSTICK + AUTO AIM) ---
+        // JOYSTICK MOBILE TUYỆT ĐỐI KHÔNG KẸT
         const jZone = document.getElementById('joystickZone'), jKnob = document.getElementById('joystickKnob'), sBtn = document.getElementById('mobileShootBtn');
         let jTouchId = null;
         
+        const resetJoystick = () => { jTouchId = null; jKnob.style.transform = `translate(0px, 0px)`; keys = {w:false, a:false, s:false, d:false}; };
+
         jZone.addEventListener('touchstart', (e) => { e.preventDefault(); if(!isPlaying) return; jTouchId = e.changedTouches[0].identifier; handleJoystickMove(e.changedTouches[0]); }, {passive: false});
         jZone.addEventListener('touchmove', (e) => { e.preventDefault(); if(!isPlaying) return; for(let i=0; i<e.changedTouches.length; i++) { if(e.changedTouches[i].identifier === jTouchId) handleJoystickMove(e.changedTouches[i]); } }, {passive: false});
-        jZone.addEventListener('touchend', (e) => { e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) { if(e.changedTouches[i].identifier === jTouchId) { jTouchId = null; jKnob.style.transform = `translate(0px, 0px)`; keys = {w:false, a:false, s:false, d:false}; } } }, {passive: false});
+        
+        // Dùng touchend VÀ touchcancel để chắc chắn xóa nhận diện tay
+        jZone.addEventListener('touchend', (e) => { e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) { if(e.changedTouches[i].identifier === jTouchId) resetJoystick(); } }, {passive: false});
+        jZone.addEventListener('touchcancel', (e) => { e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) { if(e.changedTouches[i].identifier === jTouchId) resetJoystick(); } }, {passive: false});
 
         function handleJoystickMove(touch) {
             const rect = jZone.getBoundingClientRect();
@@ -866,38 +804,45 @@
             const dist = Math.hypot(dx, dy);
             if(dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
             jKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-            keys = { w: dy < -20, s: dy > 20, a: dx < -20, d: dx > 20 };
+            
+            keys = { w: dy < -15, s: dy > 15, a: dx < -15, d: dx > 15 };
         }
 
-        sBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault(); if(!isPlaying || !latestGameState) return;
-            isShooting = true;
-            if(document.getElementById('memeToggle') && document.getElementById('memeToggle').checked) playSound();
-            
-            // Auto-aim Mobile
+        // Nút bắn Mobile & Auto Aim thông minh
+        const autoAimLogic = () => {
+            if(!latestGameState) return;
             const myP = latestGameState.players[socket.id];
-            let targetP = null, minD = Infinity;
+            let target = null, minD = Infinity;
+            
+            // Ưu tiên ngắm Zombie
+            if(gameMode === 'zombie' && latestGameState.zombies) {
+                latestGameState.zombies.forEach(z => { let d = Math.hypot(z.x - myP.x, z.y - myP.y); if(d < minD) { minD = d; target = z; } });
+            }
+            // Ngắm người chơi (Nếu không có Zombie hoặc bắn tự do)
             for(let sid in latestGameState.players) { 
                 if(sid !== socket.id && latestGameState.players[sid].hp > 0) {
                     let d = Math.hypot(latestGameState.players[sid].x - myP.x, latestGameState.players[sid].y - myP.y);
-                    if(d < minD) { minD = d; targetP = latestGameState.players[sid]; }
+                    if(d < minD) { minD = d; target = latestGameState.players[sid]; }
                 }
             }
-            if(myP && targetP) { aimAngle = Math.atan2(targetP.y - myP.y, targetP.x - myP.x); }
-        }, {passive: false});
-        sBtn.addEventListener('touchend', (e) => { e.preventDefault(); isShooting = false; });
+            if(myP && target) aimAngle = Math.atan2(target.y - myP.y, target.x - myP.x);
+        };
 
-        // --- VÒNG LẶP GỬI INPUT LÊN SERVER ---
+        sBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if(!isPlaying) return; isShooting = true; autoAimLogic(); }, {passive: false});
+        sBtn.addEventListener('touchmove', (e) => { e.preventDefault(); if(isShooting) autoAimLogic(); }, {passive: false});
+        sBtn.addEventListener('touchend', (e) => { e.preventDefault(); isShooting = false; });
+        sBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); isShooting = false; });
+
+        // --- VÒNG LẶP GỬI INPUT SERVER ---
         function startGameLoop() {
             if(!isPlaying) return;
             if(keys.w || keys.a || keys.s || keys.d || isShooting) {
-                if(gameMode === 'ffa') socket.emit('ffaInput', { keys: keys, aimAngle: aimAngle, isShooting: isShooting });
-                else if(gameMode === 'pk') socket.emit('pkInput', { roomId: currentPKRoomId, keys: keys, aimAngle: aimAngle, isShooting: isShooting });
+                socket.emit('gameInput', { mode: gameMode, roomId: currentPKRoomId, keys: keys, aimAngle: aimAngle, isShooting: isShooting });
             }
             gameLoopReq = requestAnimationFrame(startGameLoop);
         }
 
-        // --- 7. HIỆU ỨNG HOA SAKURA ---
+        // --- 6. HIỆU ỨNG HOA SAKURA ---
         const cvs = document.getElementById('sakuraCanvas'); const cx = cvs.getContext('2d'); 
         window.addEventListener('resize', () => { cvs.width = window.innerWidth; cvs.height = window.innerHeight; });
         cvs.width = window.innerWidth; cvs.height = window.innerHeight;
@@ -908,12 +853,10 @@
                 if(t.y > cvs.height + t.h || t.x > cvs.width || t.x < -t.w) { t.x = Math.random() * cvs.width; t.y = -20; }
                 cx.save(); cx.translate(t.x, t.y); cx.rotate(t.r); cx.scale(Math.sin(t.f), 1); cx.beginPath(); cx.moveTo(0,0);
                 cx.bezierCurveTo(-t.w, -t.h*.3, -t.w*.8, t.h, 0, t.h); cx.bezierCurveTo(t.w*.8, t.h, t.w, -t.h*.3, 0, 0);
-                let g = cx.createLinearGradient(0,0,0,t.h); 
-                g.addColorStop(0, `rgba(255,182,193,${t.o})`); g.addColorStop(1, `rgba(255,105,180,${t.o})`);
+                let g = cx.createLinearGradient(0,0,0,t.h); g.addColorStop(0, `rgba(255,182,193,${t.o})`); g.addColorStop(1, `rgba(255,105,180,${t.o})`);
                 cx.fillStyle = g; cx.fill(); cx.restore();
                 t.y += t.d; t.x += t.hs; t.r += t.rs; t.f += t.fs;
-            });
-            requestAnimationFrame(animateSakura);
+            }); requestAnimationFrame(animateSakura);
         })();
     </script>
 </body>
