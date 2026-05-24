@@ -44,7 +44,7 @@
 
     <div id="globalLoading" class="fixed inset-0 bg-pink-100/95 z-[9999] flex flex-col justify-center items-center transition-opacity duration-300">
         <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 mb-4"></div>
-        <p class="text-pink-600 font-bold animate-pulse uppercase">Đang tải...</p>
+        <p class="text-pink-600 font-bold animate-pulse uppercase">Đang đồng bộ dữ liệu...</p>
     </div>
 
     <div id="bannedContainer" class="fixed inset-0 bg-red-950/95 z-[9995] hidden flex-col items-center justify-center backdrop-blur-md text-white p-6 text-center">
@@ -91,18 +91,19 @@
     </div>
 
 
-    <div id="authContainer" class="h-full flex items-center justify-center p-4 relative z-10 hidden">
+    <div id="authContainer" class="h-full flex items-center justify-center p-4 relative z-10">
         
-        <div id="loginCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl zh hidden">
-            <div class="text-center mb-8"><span class="text-6xl block mb-2">🌸</span><h2 class="text-3xl font-black text-pink-600">CHAT</h2></div>
+        <div id="loginCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl zh">
+            <div class="text-center mb-8"><span class="text-6xl block mb-2">🌸</span><h2 class="text-3xl font-black text-pink-600">CHERRY CHAT</h2></div>
             <form id="loginForm" class="space-y-4">
-                <div><input type="text" id="loginKey" placeholder="Tài khoản / Số điện thoại" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold"></div>
+                <div><input type="text" id="loginKey" placeholder="Tài khoản / Số điện thoại" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"></div>
                 <div>
                     <div class="relative">
-                        <input type="password" id="loginPassword" placeholder="Mật khẩu" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold">
+                        <input type="password" id="loginPassword" placeholder="Mật khẩu" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700">
                         <button type="button" onclick="togglePassView('loginPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button>
                     </div>
                 </div>
+                
                 <div class="flex items-center justify-between mt-2 px-1">
                     <label class="flex items-center text-xs font-bold text-gray-600 cursor-pointer hover:text-pink-600 transition">
                         <input type="checkbox" id="rememberMe" class="mr-2 w-4 h-4 rounded text-pink-500 focus:ring-pink-400 cursor-pointer"> Ghi nhớ tài khoản
@@ -149,7 +150,7 @@
                 </div>
                 <button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg hover:bg-pink-600 transition mt-4">XÁC NHẬN ĐỔI</button>
             </form>
-            <p class="text-center text-xs mt-5"><button onclick="switchAuthView('login')" class="text-gray-500 font-bold hover:text-pink-600 hover:underline transition">Quay lại Đăng nhập</button></p>
+            <p class="text-center text-xs mt-5"><button type="button" onclick="switchAuthView('login')" class="text-gray-500 font-bold hover:text-pink-600 hover:underline transition">Quay lại Đăng nhập</button></p>
         </div>
 
         <div id="setupProfileCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl hidden">
@@ -164,9 +165,7 @@
 
 
     <div id="appContainer" class="h-full hidden flex-col md:flex-row p-4 gap-4 max-w-7xl mx-auto z-20 relative">
-        
         <div class="w-full md:w-[340px] flex flex-col gap-4">
-            
             <div class="glass p-5 rounded-[2rem] shadow-lg flex flex-col border border-pink-100">
                 <div class="flex items-center justify-between group">
                     <div class="flex items-center space-x-4 cursor-pointer" onclick="openMyProfileModal()">
@@ -176,7 +175,7 @@
                             <p id="meUsername" class="text-xs text-pink-500 font-bold">@username</p>
                         </div>
                     </div>
-                    <button onclick="handleLogout()" class="w-10 h-10 bg-white/50 rounded-full text-red-500 font-black hover:bg-red-500 hover:text-white transition" title="Đăng xuất">⎋</button>
+                    <button onclick="handleLogout()" class="w-10 h-10 bg-white/50 rounded-full text-red-500 font-black hover:bg-red-500 hover:text-white transition">⎋</button>
                 </div>
                 
                 <button onclick="enterFFAGameMode()" class="w-full mt-4 bg-purple-500 text-white font-black py-3 rounded-xl shadow-md hover:bg-purple-600 transition flex justify-center items-center gap-2">
@@ -184,7 +183,7 @@
                 </button>
                 
                 <div class="flex items-center justify-between mt-4 px-2 border-t border-pink-100 pt-3">
-                    <span class="text-[11px] font-black text-pink-600 uppercase">Chế độ Meme (Âm thanh)</span>
+                    <span class="text-[11px] font-black text-pink-600 uppercase">🤪 Chế độ Meme</span>
                     <label class="relative inline-block w-10 mr-2 align-middle cursor-pointer">
                         <input type="checkbox" id="memeToggle" class="tc absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
                         <label for="memeToggle" class="tl block overflow-hidden h-5 rounded-full cursor-pointer"></label>
@@ -223,35 +222,31 @@
                 <div class="flex items-center space-x-4">
                     <div class="w-12 h-12 md:w-14 md:h-14 bg-pink-100 rounded-full flex items-center justify-center text-2xl md:text-3xl cursor-pointer hover:bg-pink-200 transition" onclick="viewTargetProfile()">👤</div>
                     <div>
-                        <h3 id="chatTargetName" class="font-black text-lg md:text-xl text-pink-700">Chat</h3>
-                        <p id="chatTargetStatus" class="text-xs text-gray-500 font-bold">Hãy chọn một người bạn để bắt đầu</p>
+                        <h3 id="chatTargetName" class="font-black text-lg md:text-xl text-pink-700">Cherry Chat</h3>
+                        <p id="chatTargetStatus" class="text-xs text-gray-500 font-bold">Hãy chọn một người bạn</p>
                     </div>
                 </div>
                 <div id="chatActions" class="space-x-2 hidden flex items-center">
-                    <button id="btnInvitePK" onclick="invitePK()" class="px-3 py-2 bg-red-50 border-2 border-red-200 text-red-600 text-[10px] md:text-xs font-black rounded-lg hover:bg-red-100 hover:scale-105 transition shadow-sm mr-1 md:mr-2 flex items-center">⚔️ Thách Đấu PK</button>
+                    <button id="btnInvitePK" onclick="invitePK()" class="px-3 py-2 bg-red-50 border-2 border-red-200 text-red-600 text-[10px] md:text-xs font-black rounded-lg hover:bg-red-100 transition shadow-sm mr-1 md:mr-2 flex items-center">⚔️ Thách Đấu PK</button>
                     <button id="btnArchiveToggle" onclick="actionToggleArchive()" class="px-2 md:px-3 py-2 bg-white border-2 border-amber-200 text-amber-600 text-[10px] md:text-xs font-black rounded-lg hover:bg-amber-50">Lưu trữ</button>
                     <button id="btnBlockToggle" onclick="actionToggleBlock()" class="px-2 md:px-3 py-2 bg-red-50 border-2 border-red-200 text-red-600 text-[10px] md:text-xs font-black rounded-lg hover:bg-red-100">Chặn</button>
                 </div>
             </div>
             
-            <div id="messagesArea" class="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 bg-white/30 relative">
-                </div>
+            <div id="messagesArea" class="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 bg-white/30 relative"></div>
             
             <div id="typingIndicator" class="absolute bottom-[84px] left-8 text-xs text-pink-600 font-bold italic hidden bg-white/90 px-4 py-1.5 rounded-full shadow-md z-10 animate-pulse">Đối phương đang gõ...</div>
             
             <form id="messageForm" class="px-4 md:px-6 py-4 bg-white/70 border-t border-pink-100 flex items-center space-x-2 md:space-x-3 z-10">
                 <div id="normalChatUI" class="flex flex-1 items-center space-x-2 md:space-x-3 w-full">
                     <button type="button" id="btnCancelEdit" onclick="cancelEdit()" class="hidden text-xs text-white bg-red-500 font-bold px-3 py-3 rounded-xl shadow">✕ Hủy</button>
-                    
                     <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="uploadImage(event)">
-                    <button type="button" onclick="document.getElementById('imageInput').click()" class="bg-pink-100 text-pink-600 px-3 md:px-4 py-3 rounded-xl font-black text-lg hover:bg-pink-200 transition shadow-sm" title="Gửi ảnh">📷</button>
-                    
+                    <button type="button" onclick="document.getElementById('imageInput').click()" class="bg-pink-100 text-pink-600 px-3 md:px-4 py-3 rounded-xl font-black text-lg hover:bg-pink-200 transition shadow-sm">📷</button>
                     <input type="text" id="messageInput" disabled placeholder="Nhập tin nhắn..." class="flex-1 px-4 md:px-5 py-3 md:py-3.5 rounded-2xl border-2 border-pink-100 bg-white outline-none focus:border-pink-400 text-sm font-bold text-gray-700 transition">
-                    
                     <button type="submit" id="btnSendMessage" disabled class="bg-pink-500 text-white px-6 md:px-8 py-3 md:py-3.5 rounded-2xl font-black shadow-lg hover:bg-pink-600 transition">GỬI</button>
                 </div>
                 <div id="blockedChatUI" class="hidden flex-1 text-center py-3 bg-red-50 rounded-2xl border-2 border-red-200">
-                    <span class="text-red-500 font-black text-sm">Không thể gửi tin nhắn. Một trong hai người đã chặn đối phương.</span>
+                    <span class="text-red-500 font-black text-sm">🚫 Không thể gửi tin nhắn. Bị chặn.</span>
                 </div>
             </form>
         </div>
@@ -261,15 +256,15 @@
     <div id="gameContainer" class="h-full hidden flex-col p-2 md:p-4 max-w-5xl mx-auto z-20 relative">
         <div class="glass p-3 md:p-4 rounded-t-2xl shadow-xl flex justify-between items-center mb-1">
             <div class="flex-1 hidden md:block">
-                <h2 id="gameTitle" class="text-xl md:text-3xl font-black text-purple-600 uppercase">🎮 ARENA BẮN SÚNG</h2>
-                <p class="text-[10px] md:text-xs text-gray-500 font-bold">PC: Phím WASD & Chuột | Mobile: Xoay ngang, dùng Joystick</p>
+                <h2 id="gameTitle" class="text-xl md:text-3xl font-black text-purple-600 uppercase">🎮 ARENA</h2>
+                <p class="text-[10px] md:text-xs text-gray-500 font-bold">PC: Phím WASD & Chuột | Mobile: Joystick</p>
             </div>
             <div class="flex-1 text-center flex flex-col items-center justify-center">
                 <p id="gameStatusText" class="text-xs md:text-sm font-black text-pink-600 uppercase mb-2"></p>
                 <button id="btnStartGame" onclick="clickStartGame()" class="hidden bg-green-500 text-white font-black px-6 md:px-10 py-2 md:py-3 rounded-xl hover:bg-green-600 transition shadow-[0_0_15px_rgba(34,197,94,0.6)] animate-pulse">BẮT ĐẦU NGAY</button>
             </div>
             <div class="flex-1 flex justify-end">
-                <button onclick="leaveGameMode()" class="bg-red-500 text-white font-black px-4 md:px-6 py-2 md:py-3 rounded-xl hover:bg-red-600 transition shadow-md">ĐẦU HÀNG / THOÁT</button>
+                <button onclick="leaveGameMode()" class="bg-red-500 text-white font-black px-4 md:px-6 py-2 md:py-3 rounded-xl hover:bg-red-600 transition shadow-md">THOÁT</button>
             </div>
         </div>
 
@@ -278,7 +273,7 @@
                 <span id="p1Name" class="font-black text-red-400 text-base md:text-2xl truncate max-w-[100px] md:max-w-[200px]">P1</span>
                 <span id="p1Score" class="text-3xl md:text-5xl font-black text-white">0</span>
             </div>
-            <div class="text-yellow-400 font-black text-base md:text-2xl tracking-widest text-center flex-1">VS <span class="block text-[9px] md:text-xs text-gray-400">ĐẠT 100 ĐIỂM ĐỂ THẮNG</span></div>
+            <div class="text-yellow-400 font-black text-base md:text-2xl tracking-widest text-center flex-1">VS <span class="block text-[9px] md:text-xs text-gray-400">ĐẠT 100 ĐIỂM</span></div>
             <div class="flex items-center gap-3 md:gap-6 flex-row-reverse">
                 <span id="p2Name" class="font-black text-blue-400 text-base md:text-2xl truncate max-w-[100px] md:max-w-[200px] text-right">P2</span>
                 <span id="p2Score" class="text-3xl md:text-5xl font-black text-white">0</span>
@@ -290,7 +285,7 @@
             
             <div id="ffaLeaderboardBox" class="hidden absolute top-4 right-4 bg-black/70 p-4 rounded-xl w-48 text-white pointer-events-none border border-gray-600">
                 <h4 class="text-xs font-black text-yellow-400 mb-2 border-b border-white/20 pb-1">🏆 Bảng Xếp Hạng FFA</h4>
-                <p class="text-[10px] text-gray-300 mb-2">Điểm của bạn: <span id="myFFAScoreDisplay" class="font-black text-green-400 text-sm">0</span></p>
+                <p class="text-[10px] text-gray-300 mb-2">Điểm: <span id="myFFAScoreDisplay" class="font-black text-green-400 text-sm">0</span></p>
                 <div id="ffaLeaderboard" class="space-y-1 text-[11px] font-bold text-gray-200">Đang tải...</div>
             </div>
 
@@ -359,7 +354,7 @@
                 <button onclick="saveMyProfile()" class="flex-1 py-3.5 bg-pink-500 text-white rounded-xl font-black hover:bg-pink-600 transition shadow-lg">LƯU HỒ SƠ</button>
             </div>
             <div class="mt-6 text-center border-t border-pink-100 pt-4">
-                <button onclick="document.getElementById('myProfileModal').classList.add('hidden'); document.getElementById('changePassModal').classList.remove('hidden'); document.getElementById('changePassModal').classList.add('flex');" class="text-blue-500 font-bold hover:text-blue-700 hover:underline">🔑 Đổi mật khẩu tài khoản</button>
+                <button type="button" onclick="document.getElementById('myProfileModal').classList.add('hidden'); document.getElementById('changePassModal').classList.remove('hidden'); document.getElementById('changePassModal').classList.add('flex');" class="text-blue-500 font-bold hover:text-blue-700 hover:underline">🔑 Đổi mật khẩu tài khoản</button>
             </div>
         </div>
     </div>
@@ -370,8 +365,8 @@
             <input type="password" id="oldPassInput" placeholder="Mật khẩu cũ" class="w-full p-3.5 mb-4 border-2 rounded-xl outline-none focus:border-pink-400 font-bold">
             <input type="password" id="newPassInput" placeholder="Mật khẩu mới" class="w-full p-3.5 mb-6 border-2 rounded-xl outline-none focus:border-pink-400 font-bold">
             <div class="flex space-x-3">
-                <button onclick="document.getElementById('changePassModal').classList.add('hidden')" class="flex-1 py-3.5 bg-gray-200 rounded-xl font-black hover:bg-gray-300 text-gray-700 transition">Hủy</button>
-                <button onclick="submitChangePassInternal()" class="flex-1 py-3.5 bg-pink-500 text-white rounded-xl font-black hover:bg-pink-600 shadow transition">Xác Nhận Đổi</button>
+                <button type="button" onclick="document.getElementById('changePassModal').classList.add('hidden')" class="flex-1 py-3.5 bg-gray-200 rounded-xl font-black hover:bg-gray-300 text-gray-700 transition">Hủy</button>
+                <button type="button" onclick="submitChangePassInternal()" class="flex-1 py-3.5 bg-pink-500 text-white rounded-xl font-black hover:bg-pink-600 shadow transition">Xác Nhận Đổi</button>
             </div>
         </div>
     </div>
@@ -409,9 +404,9 @@
         let currentUser = null, activeChatUserId = null, editingMsgId = null, currentAdminChatUserId = null;
         let globalDataStore = { friends: [], messages: [], requests: [], blocks: [], archives: [], isMuted: false };
         
-        // --- Âm thanh ---
-        const notifSound = new Audio('https://www.myinstants.com/media/sounds/error-sound.mp3');
-        const memeUrls = ['https://www.myinstants.com/media/sounds/vine-boom.mp3', 'https://www.myinstants.com/media/sounds/metal-pipe-clang.mp3','https://www.myinstants.com/media/sounds/quack_5.mp3', 'https://www.myinstants.com/media/sounds/boing_1.mp3'];
+        // --- 1. Hệ thống Âm thanh & Thông báo ---
+        const notifSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_79eff4e14f.mp3');
+        const memeUrls = ['https://www.myinstants.com/media/sounds/vine-boom.mp3', 'https://www.myinstants.com/media/sounds/quack_5.mp3', 'https://www.myinstants.com/media/sounds/boing_1.mp3'];
         const memeSounds = memeUrls.map(u => new Audio(u));
 
         if ("Notification" in window) { Notification.requestPermission(); }
@@ -434,7 +429,7 @@
             } 
         }
 
-        // --- Các hàm tiện ích UI ---
+        // --- 2. Các hàm tiện ích UI ---
         function openLightbox(src) { document.getElementById('lightboxImg').src = src; const lb = document.getElementById('imageLightbox'); lb.classList.remove('hidden'); lb.classList.add('flex'); setTimeout(() => { lb.classList.remove('opacity-0'); document.getElementById('lightboxImg').classList.remove('scale-95'); }, 10); }
         function closeLightbox() { const lb = document.getElementById('imageLightbox'); lb.classList.add('opacity-0'); document.getElementById('lightboxImg').classList.add('scale-95'); setTimeout(() => { lb.classList.add('hidden'); lb.classList.remove('flex'); }, 300); }
 
@@ -447,7 +442,10 @@
 
         function showLoading(show) { const l = document.getElementById('globalLoading'); if(show) { l.classList.remove('hidden'); l.classList.add('opacity-100'); } else { l.classList.add('opacity-0'); setTimeout(() => l.classList.add('hidden'), 300); } }
 
-        function switchAuthView(v) { ['loginCard', 'registerCard', 'setupProfileCard', 'forgotCard'].forEach(id => { document.getElementById(id).classList.add('hidden'); }); document.getElementById((v === 'setup' ? 'setupProfile' : v) + 'Card').classList.remove('hidden'); }
+        function switchAuthView(v) { 
+            ['loginCard', 'registerCard', 'setupProfileCard', 'forgotCard'].forEach(id => { document.getElementById(id).classList.add('hidden'); }); 
+            document.getElementById((v === 'setup' ? 'setupProfile' : v) + 'Card').classList.remove('hidden'); 
+        }
         function togglePassView(id, btn) { const i = document.getElementById(id); if(i.type === 'password') { i.type = 'text'; btn.innerText = 'Ẩn'; } else { i.type = 'password'; btn.innerText = 'Hiện'; } }
 
         let banInterval = null;
@@ -458,13 +456,36 @@
             else { banInterval = setInterval(() => { const dist = new Date(banUntil).getTime() - new Date().getTime(); if (dist < 0) { clearInterval(banInterval); location.reload(); } else { const d = Math.floor(dist / (1000 * 60 * 60 * 24)), h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)), m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60)), s = Math.floor((dist % (1000 * 60)) / 1000); document.getElementById('bannedTimeDisplay').innerText = `Mở khóa sau: ${d} ngày ${h} giờ ${m} phút ${s} giây`; } }, 1000); }
         }
 
-        // --- Khởi tạo Auth ---
+        // --- 3. Quản lý Đăng nhập & Session ---
         window.addEventListener('DOMContentLoaded', async () => { 
-            setTimeout(() => { const l = document.getElementById('globalLoading'); if(l && !l.classList.contains('hidden')) { l.classList.add('hidden'); if(document.getElementById('authContainer').classList.contains('hidden') && document.getElementById('appContainer').classList.contains('hidden')) switchAuthView('login'); } }, 3000);
+            // Ẩn loading sau 2s, nếu chưa đăng nhập thì giữ nguyên authContainer
+            setTimeout(() => { 
+                const l = document.getElementById('globalLoading'); 
+                if(l && !l.classList.contains('hidden')) { 
+                    l.classList.add('hidden'); 
+                } 
+            }, 2000);
+            
             const savedKey = localStorage.getItem('cherrySavedLoginKey');
             if (savedKey) { document.getElementById('loginKey').value = savedKey; document.getElementById('rememberMe').checked = true; }
+            
             showLoading(true); 
-            try { const r = await fetch('/api/me'); const d = await r.json(); if (r.ok) initAppSession(d); else if (r.status === 403 && d.isBanned) { showLoading(false); triggerBannedScreen(d.banUntil); } else { switchAuthView('login'); showLoading(false); } } catch (e) { switchAuthView('login'); showLoading(false); } 
+            try { 
+                const r = await fetch('/api/me'); 
+                const d = await r.json(); 
+                if (r.ok) {
+                    initAppSession(d); 
+                } else if (r.status === 403 && d.isBanned) { 
+                    showLoading(false); triggerBannedScreen(d.banUntil); 
+                } else { 
+                    // Chưa đăng nhập -> Hiện màn hình đăng nhập
+                    switchAuthView('login'); 
+                    showLoading(false); 
+                } 
+            } catch (e) { 
+                switchAuthView('login'); 
+                showLoading(false); 
+            } 
         });
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => { 
@@ -473,7 +494,13 @@
             if (document.getElementById('rememberMe').checked) localStorage.setItem('cherrySavedLoginKey', loginKeyVal); else localStorage.removeItem('cherrySavedLoginKey');
             const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loginKey: loginKeyVal, password: document.getElementById('loginPassword').value }) }); 
             const d = await r.json(); showLoading(false); 
-            if(r.ok) { if(d.needProfile) switchAuthView('setupProfile'); else if (d.step === "banned") triggerBannedScreen(d.banUntil); else initAppSession(await(await fetch('/api/me')).json()); } else { showCustomAlert(d.msg, "Đăng nhập thất bại"); } 
+            if(r.ok) { 
+                if(d.needProfile) switchAuthView('setupProfile'); 
+                else if (d.step === "banned") triggerBannedScreen(d.banUntil); 
+                else initAppSession(await(await fetch('/api/me')).json()); 
+            } else { 
+                showCustomAlert(d.msg, "Đăng nhập thất bại"); 
+            } 
         });
 
         document.getElementById('registerForm').addEventListener('submit', async (e) => { 
@@ -494,20 +521,36 @@
         document.getElementById('setupProfileForm').addEventListener('submit', async (e) => { 
             e.preventDefault(); showLoading(true); 
             const r = await fetch('/api/setup-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayName: document.getElementById('setupDisplayName').value }) }); 
-            showLoading(false); if(r.ok) initAppSession(await(await fetch('/api/me')).json()); else showCustomAlert("Lỗi cập nhật tên!"); 
+            showLoading(false); 
+            if(r.ok) initAppSession(await(await fetch('/api/me')).json()); 
+            else showCustomAlert("Lỗi cập nhật tên!"); 
         });
 
         async function handleLogout() { await fetch('/api/logout', { method: 'POST' }); location.reload(); }
 
         function initAppSession(u) { 
             currentUser = u; 
-            ['authContainer', 'bannedContainer', 'adminContainer', 'gameContainer'].forEach(id => { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); });
-            showLoading(false); socket.connect(); 
-            if (u.role === 'admin') { document.getElementById('admin2FAModal').classList.remove('hidden'); document.getElementById('admin2FAModal').classList.add('flex'); } 
-            else { document.getElementById('appContainer').classList.remove('hidden'); document.getElementById('appContainer').classList.add('flex'); document.getElementById('meDisplayName').innerText = u.displayName; document.getElementById('meUsername').innerText = '@' + u.username; socket.emit('initData'); } 
+            // Ẩn tất cả đi, chuẩn bị hiện appContainer
+            ['authContainer', 'bannedContainer', 'adminContainer', 'gameContainer'].forEach(id => { 
+                document.getElementById(id).classList.add('hidden'); 
+                document.getElementById(id).classList.remove('flex'); 
+            });
+            showLoading(false); 
+            socket.connect(); 
+            
+            if (u.role === 'admin') { 
+                document.getElementById('admin2FAModal').classList.remove('hidden'); 
+                document.getElementById('admin2FAModal').classList.add('flex'); 
+            } else { 
+                document.getElementById('appContainer').classList.remove('hidden'); 
+                document.getElementById('appContainer').classList.add('flex'); 
+                document.getElementById('meDisplayName').innerText = u.displayName; 
+                document.getElementById('meUsername').innerText = '@' + u.username; 
+                socket.emit('initData'); 
+            } 
         }
 
-        // --- Socket Events Chat ---
+        // --- 4. Logic Socket Chat ---
         socket.on('actionError', (msg) => showCustomAlert(msg, "Lỗi")); 
         socket.on('actionSuccess', (msg) => showCustomAlert(msg, "Hệ thống")); 
         socket.on('forceBannedUI', (d) => triggerBannedScreen(d.banUntil)); 
@@ -530,10 +573,9 @@
         socket.on('msgPopupNotification', ({fromName, text}) => { if (!activeChatUserId || globalDataStore.friends.find(f => f.id === activeChatUserId)?.displayName !== fromName) triggerPopup(`Từ ${fromName}`, text); });
         socket.on('userStatusChange', ({userId, status}) => { const f = globalDataStore.friends.find(x => x.id === userId); if(f){ f.isOnline = (status === 'online'); renderFriendsList(); if(activeChatUserId === userId) updateChatHeader(); } });
 
-        // --- Logic UI Chat ---
+        // Tìm kiếm và Bạn bè
         function triggerSearch() { const q = document.getElementById('searchBar').value.trim(); if(q) socket.emit('searchUser', q); }
         socket.on('searchResults', (res) => { const a = document.getElementById('searchResultsArea'); a.innerHTML = ''; if(res.length === 0) return a.innerHTML = '<p class="text-xs text-gray-400 font-bold">Không tìm thấy ai.</p>'; res.forEach(u => a.innerHTML += `<div class="flex justify-between items-center bg-white p-2.5 rounded-xl border"><span class="font-bold text-sm">${u.displayName}</span><button onclick="socket.emit('sendFriendRequest','${u.id}'); this.innerText='Đã gửi';" class="bg-pink-500 text-white px-2 py-1 rounded text-xs hover:bg-pink-600">Kết bạn</button></div>`); });
-        
         function renderFriendRequests() { const a = document.getElementById('friendRequestsArea'); document.getElementById('reqTitle').innerText = `📩 Lời mời (${globalDataStore.requests.length})`; a.innerHTML = ''; globalDataStore.requests.forEach(r => a.innerHTML += `<div class="flex justify-between bg-white p-3 rounded-xl border text-sm"><span class="font-black text-pink-700">${r.fromName}</span><div class="space-x-1"><button onclick="socket.emit('respondFriendRequest',{requestId:'${r.id}',action:'accept'})" class="bg-green-500 text-white px-2 py-1 rounded text-xs">Đồng ý</button><button onclick="socket.emit('respondFriendRequest',{requestId:'${r.id}',action:'reject'})" class="bg-gray-200 px-2 py-1 rounded text-xs text-gray-700">Xóa</button></div></div>`); }
 
         function renderFriendsList() { 
@@ -546,7 +588,7 @@
             
             l.forEach(f => { 
                 const dot = f.isOnline ? '<span class="w-2.5 h-2.5 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse"></span>' : '<span class="w-2.5 h-2.5 bg-gray-300 rounded-full"></span>'; 
-                const blockWarn = (f.isBlocked || f.isBlockedBy) ? '<span class="text-[10px] text-red-500 font-bold ml-1">Đã chặn</span>' : ''; 
+                const blockWarn = (f.isBlocked || f.isBlockedBy) ? '<span class="text-[10px] text-red-500 font-bold ml-1">🚫 Đã chặn</span>' : ''; 
                 const cls = (activeChatUserId === f.id) ? 'bg-pink-100 border-pink-300 scale-[1.02]' : 'bg-white hover:bg-pink-50'; 
                 a.innerHTML += `<div onclick="selectChatTarget('${f.id}')" class="flex items-center justify-between p-3 rounded-2xl border-2 cursor-pointer transition-all ${cls}"><div><span class="font-black text-sm text-gray-800">${f.displayName} ${f.displayName==='Hệ Thống Admin'?'🛡️':''}</span><span class="block text-[10px] text-gray-500 font-bold mt-0.5">${f.isOnline?'Đang trực tuyến':'Ngoại tuyến'} ${blockWarn}</span></div>${dot}</div>`; 
             }); 
@@ -558,8 +600,8 @@
             const f = globalDataStore.friends.find(x => x.id === activeChatUserId); if(!f) return; 
             document.getElementById('chatTargetName').innerText = f.displayName; 
             document.getElementById('chatTargetStatus').innerText = f.isOnline ? 'Đang trực tuyến' : 'Ngoại tuyến'; 
-            document.getElementById('btnBlockToggle').innerText = f.isBlocked ? 'Mở Chặn ' : 'Chặn '; 
-            document.getElementById('btnArchiveToggle').innerText = f.isArchived ? 'Bỏ Lưu ' : 'Lưu Trữ '; 
+            document.getElementById('btnBlockToggle').innerText = f.isBlocked ? 'Mở Chặn 🔓' : 'Chặn 🚫'; 
+            document.getElementById('btnArchiveToggle').innerText = f.isArchived ? 'Bỏ Lưu 📥' : 'Lưu Trữ 📤'; 
             
             const pkBtn = document.getElementById('btnInvitePK');
             if(f.displayName === 'Hệ Thống Admin' || !f.isOnline) pkBtn.classList.add('hidden'); else pkBtn.classList.remove('hidden');
@@ -583,7 +625,7 @@
                 const isMe = m.from === currentUser.id; 
                 const bub = isMe ? 'bg-gradient-to-br from-pink-400 to-pink-500 text-white shadow-md' : 'bg-white text-gray-800 border border-pink-100 shadow-sm';
                 let c = ''; 
-                if (m.isRecalled) c = `<p class="italic text-sm opacity-80 font-bold">Tin nhắn đã thu hồi</p>`; 
+                if (m.isRecalled) c = `<p class="italic text-sm opacity-80 font-bold">🚫 Tin nhắn đã thu hồi</p>`; 
                 else if (m.type === 'image') c = `<img src="${m.imgData}" class="max-w-[250px] rounded-xl cursor-zoom-in shadow-sm border-2 border-white/50 hover:opacity-90 transition" onclick="openLightbox('${m.imgData}')">`; 
                 else c = `<p class="font-bold text-sm leading-relaxed">${m.text} ${m.isEdited?'<span class="text-[10px] italic opacity-75 ml-1">(đã sửa)</span>':''}</p>`;
                 
@@ -611,7 +653,7 @@
         function saveMyProfile() { const d = { displayName:document.getElementById('editProfileDisplayName').value.trim(), phone:document.getElementById('editProfilePhone').value.trim(), email:document.getElementById('editProfileEmail').value.trim(), gender:document.getElementById('editProfileGender').value, dob:document.getElementById('editProfileDob').value, bio:document.getElementById('editProfileBio').value.trim() }; if(!d.displayName || !d.phone) return showCustomAlert("Không được bỏ trống tên hiển thị và SĐT!"); socket.emit('updateMyProfile', d, (res) => { showCustomAlert(res.msg); if(res.success){ document.getElementById('myProfileModal').classList.add('hidden'); currentUser.displayName = d.displayName; document.getElementById('meDisplayName').innerText = d.displayName; } }); }
         function submitChangePassInternal() { const o = document.getElementById('oldPassInput').value, n = document.getElementById('newPassInput').value; if(!o || !n) return; socket.emit('changePasswordInternal', {oldPass: o, newPass: n}, (res) => { showCustomAlert(res.msg); if(res.success) document.getElementById('changePassModal').classList.add('hidden'); }); }
 
-        // --- Bảng Admin ---
+        // --- 5. Bảng Quản Trị Admin ---
         function verifyAdmin2FA() { const p = document.getElementById('admin2FAPassword').value; if(!p) return; socket.emit('verifyAdminAuth', p, (res) => { if (res.success) { document.getElementById('admin2FAModal').classList.add('hidden'); document.getElementById('adminContainer').classList.remove('hidden'); document.getElementById('adminContainer').classList.add('flex'); socket.emit('initData'); socket.emit('adminGetUsers'); } else { showCustomAlert(res.msg, "Lỗi mã PIN"); } }); }
         let admFil = 'all'; 
         function adminSetFilter(f) { admFil = f; if(f === 'all') { document.getElementById('adminTabAll').className = "px-4 py-2 font-black text-pink-600 border-b-2 border-pink-600"; document.getElementById('adminTabBanned').className = "px-4 py-2 font-bold text-gray-500 hover:text-pink-600"; } else { document.getElementById('adminTabBanned').className = "px-4 py-2 font-black text-pink-600 border-b-2 border-pink-600"; document.getElementById('adminTabAll').className = "px-4 py-2 font-bold text-gray-500 hover:text-pink-600"; } socket.emit('adminGetUsers'); }
@@ -624,7 +666,7 @@
                 if(u.isBanned) w = `<span class="text-red-500 font-black ml-2 text-[11px] bg-red-50 px-2 py-1 rounded">🔒 KHÓA (${u.banUntil ? new Date(u.banUntil).toLocaleTimeString() : 'V.Viễn'})</span>`; else if(u.isMuted) w = `<span class="text-orange-500 font-black ml-2 text-[11px] bg-orange-50 px-2 py-1 rounded">🔇 CẤM (${u.muteUntil ? new Date(u.muteUntil).toLocaleTimeString() : 'V.Viễn'})</span>`; 
                 const nameDisplayHtml = u.role === 'admin' ? `<span class="font-black text-pink-700">${u.displayName || u.username}</span>` : `<div class="flex items-center gap-2"><input type="text" id="admDisp-${u.id}" value="${u.displayName||''}" class="border-2 border-pink-200 rounded-lg px-2 py-1.5 text-xs w-32 outline-none focus:border-pink-400 font-bold"><button onclick="socket.emit('adminUpdateUser', {id:'${u.id}', displayName: document.getElementById('admDisp-${u.id}').value})" class="text-[10px] bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-black shadow-sm transition">Lưu</button></div>`;
                 const act = u.role === 'admin' ? '<span class="text-xs font-black text-gray-400 bg-gray-100 px-2 py-1.5 rounded-lg">🛡️ ADMIN</span>' : `<div class="flex space-x-1"><button onclick="openAdminChat('${u.id}', '${u.displayName||u.username}')" class="bg-purple-500 text-white px-2 py-1.5 rounded-lg font-bold shadow hover:bg-purple-600 text-xs transition">Chat</button><select onchange="handleAdminPunish('${u.id}', this.value); this.value='';" class="bg-white border-2 border-red-200 text-red-600 font-black rounded-lg px-1 text-xs outline-none cursor-pointer hover:border-red-500 transition"><option value="">Phạt...</option><option value="mute">🔇 Cấm nhắn</option><option value="ban">🚫 Khóa Acc</option><option value="unpunish" class="text-green-600">✅ Xóa phạt</option></select></div>`; 
-                b.innerHTML += `<tr class="border-b border-pink-50 hover:bg-white transition"><td class="p-3 font-black text-gray-700">@${u.username}</td><td class="p-3">${nameDisplayHtml}</td><td class="p-3 whitespace-nowrap">${st} <br> ${w}</td><td class="p-3 whitespace-nowrap">${act}</td></tr>`; 
+                b.innerHTML += `<tr class="border-b border-pink-50 hover:bg-white transition"><td class="p-4 font-black text-gray-700">@${u.username}</td><td class="p-4">${nameDisplayHtml}</td><td class="p-4 whitespace-nowrap">${st} <br> ${w}</td><td class="p-4 whitespace-nowrap">${act}</td></tr>`; 
             }); 
         });
         function handleAdminPunish(id, act) { if(!act) return; if (act === 'unpunish') { if(confirm('Bạn có chắc muốn xóa bỏ án phạt cho người này?')) socket.emit('adminPunishUser', { targetId:id, action:'unpunish' }, () => socket.emit('adminGetUsers')); return; } const min = prompt('Nhập số phút phạt (VD: 15, 60, 1440).\nNhập chữ "infinite" để phạt vĩnh viễn:','15'); if(min) { const dur = min.toLowerCase() === 'infinite' ? 'infinite' : parseInt(min); if(dur) socket.emit('adminPunishUser', { targetId:id, action:act, durationMinutes:dur }, () => { showCustomAlert("Xử phạt thành công!"); socket.emit('adminGetUsers'); }); } }
@@ -636,7 +678,7 @@
 
 
         // =======================================================================
-        // --- GAME ENGINE TỔNG HỢP (FFA VÀ PK 1VS1) - 60FPS ---
+        // --- 6. GAME ENGINE TỔNG HỢP (FFA VÀ PK 1VS1) - 60FPS ---
         // =======================================================================
         let gameMode = null; // 'ffa' hoặc 'pk'
         let currentPKRoomId = null, isPlaying = false, gameLoopReq = null;
@@ -762,7 +804,7 @@
             else { document.getElementById('p2Name').innerText = "Chờ đối thủ..."; document.getElementById('p2Score').innerText = "0"; }
         }
 
-        // --- VẼ CANVAS (DÙNG CHUNG) ---
+        // --- VẼ CANVAS GAME (DÙNG CHUNG) ---
         function drawGrid() {
             gctx.strokeStyle = 'rgba(255,255,255,0.05)'; gctx.lineWidth=1;
             for(let i=0; i<gcvs.width; i+=40) { gctx.beginPath(); gctx.moveTo(i,0); gctx.lineTo(i,gcvs.height); gctx.stroke(); } 
@@ -845,7 +887,7 @@
         }, {passive: false});
         sBtn.addEventListener('touchend', (e) => { e.preventDefault(); isShooting = false; });
 
-        // --- VÒNG LẶP GỬI INPUT SERVER ---
+        // --- VÒNG LẶP GỬI INPUT LÊN SERVER ---
         function startGameLoop() {
             if(!isPlaying) return;
             if(keys.w || keys.a || keys.s || keys.d || isShooting) {
@@ -855,7 +897,7 @@
             gameLoopReq = requestAnimationFrame(startGameLoop);
         }
 
-        // --- HIỆU ỨNG HOA SAKURA ---
+        // --- 7. HIỆU ỨNG HOA SAKURA ---
         const cvs = document.getElementById('sakuraCanvas'); const cx = cvs.getContext('2d'); 
         window.addEventListener('resize', () => { cvs.width = window.innerWidth; cvs.height = window.innerHeight; });
         cvs.width = window.innerWidth; cvs.height = window.innerHeight;
