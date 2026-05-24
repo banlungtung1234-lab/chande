@@ -60,7 +60,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 const sessionMiddleware = session({
-    secret: 'cherry-blossom-secret-key-pro-v7',
+    secret: 'cherry-blossom-secret-key-pro-v8',
     resave: false, saveUninitialized: true,
     store: new MemoryStore({ checkPeriod: 86400000 }), 
     cookie: { maxAge: 24 * 60 * 60 * 1000 }
@@ -76,7 +76,7 @@ let onlineUsers = {};
 // ====================================================================================
 app.post('/api/register', (req, res) => {
     const { username, phone, email, password, confirmPassword } = req.body;
-    if (username.length < 4) return res.status(400).json({ msg: "Tên đăng nhập trên 4 ký tự!" });
+    if (username.length < 4) return res.status(400).json({ msg: "Tên đăng nhập >= 4 ký tự!" });
     if (password !== confirmPassword) return res.status(400).json({ msg: "Mật khẩu không khớp!" });
 
     const db = readDB();
@@ -109,9 +109,8 @@ app.post('/api/setup-profile', (req, res) => {
     const { displayName } = req.body; 
     const db = readDB(); 
     const user = db.users.find(u => u.id === req.session.userId);
-    user.displayName = displayName; 
-    writeDB(db); 
-    res.json({ msg: "Thành công!", role: user.role });
+    if(user) { user.displayName = displayName; writeDB(db); }
+    res.json({ msg: "Thành công!", role: user ? user.role : 'user' });
 });
 
 app.post('/api/login', (req, res) => {
@@ -190,7 +189,7 @@ io.on('connection', (socket) => {
             return socket.emit('actionError', `Bạn bị cấm nhắn tin ${t}.`);
         }
         if (sender.role !== 'admin' && receiver.role !== 'admin') {
-            if (receiver.blocks && receiver.blocks.includes(currentUserId)) return socket.emit('actionError', "Không thể gửi. Bị chặn!");
+            if (receiver.blocks && receiver.blocks.includes(currentUserId)) return socket.emit('actionError', "Không thể gửi. Bạn đã bị chặn!");
             if (sender.blocks && sender.blocks.includes(toUserId)) return socket.emit('actionError', "Bạn đang chặn người này!");
             if (!sender.friends.includes(toUserId)) return socket.emit('actionError', "Hai người chưa là bạn bè!");
         }
@@ -276,7 +275,7 @@ io.on('connection', (socket) => {
 
 
     // ====================================================================================
-    // --- 5A. CHẾ ĐỘ CHƠI TỰ DO (FREE-FOR-ALL ARENA) - GIỮ LẠI THEO YÊU CẦU ---
+    // --- 5A. CHẾ ĐỘ CHƠI TỰ DO (FREE-FOR-ALL ARENA) ---
     // ====================================================================================
     socket.on('joinFFAGame', () => { 
         if(checkBanStatus()) return; 
@@ -292,7 +291,6 @@ io.on('connection', (socket) => {
 
     socket.on('leaveFFAGame', () => { socket.leave('ffaGameRoom'); delete ffaGameState.players[socket.id]; });
     
-    // Gộp input cho cả FFA
     socket.on('ffaInput', ({ keys, aimAngle, isShooting }) => {
         const p = ffaGameState.players[socket.id];
         if(p && p.hp > 0) {
@@ -309,7 +307,7 @@ io.on('connection', (socket) => {
 
 
     // ====================================================================================
-    // --- 5B. CHẾ ĐỘ THÁCH ĐẤU (PK 1VS1) - TÍNH NĂNG MỚI NÂNG CẤP ---
+    // --- 5B. CHẾ ĐỘ THÁCH ĐẤU (PK 1VS1) - ĐẠT 100 ĐIỂM SẼ THẮNG ---
     // ====================================================================================
     socket.on('invitePK', (targetId) => {
         if(checkBanStatus()) return;
@@ -324,7 +322,7 @@ io.on('connection', (socket) => {
     socket.on('acceptPK', (inviterId) => {
         if(checkBanStatus()) return;
         const inviterSocketId = onlineUsers[inviterId];
-        if(!inviterSocketId) return socket.emit('actionError', "Người mời đã thoát!");
+        if(!inviterSocketId) return socket.emit('actionError', "Người mời đã thoát mạng!");
 
         const roomId = 'pk_' + Date.now();
         socket.join(roomId); io.sockets.sockets.get(inviterSocketId)?.join(roomId);
@@ -340,6 +338,7 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('pkRoomJoined', pkRooms[roomId]);
     });
 
+    // 1 trong 2 người ấn là game bắt đầu
     socket.on('startPK', (roomId) => {
         if(pkRooms[roomId] && pkRooms[roomId].status === 'waiting') {
             if(Object.keys(pkRooms[roomId].players).length === 2) {
@@ -460,7 +459,7 @@ setInterval(() => {
                             if(p.hp <= 0 && room.players[b.ownerId]) {
                                 room.players[b.ownerId].score += 10; 
                                 if(room.players[b.ownerId].score >= 100) {
-                                    room.status = 'waiting'; 
+                                    room.status = 'waiting'; // Đưa về chế độ chờ (Cần ấn nút chơi lại)
                                     io.to(roomId).emit('pkGameOver', { winnerName: room.players[b.ownerId].name });
                                 } else {
                                     setTimeout(() => { if(room.players[sid]) { room.players[sid].hp = 100; room.players[sid].x = Math.random() * 600 + 100; room.players[sid].y = Math.random() * 400 + 50; } }, 1500);
@@ -498,4 +497,4 @@ function sendUserDataUpdate(userId, socketTarget) {
     });
 }
 
-server.listen(PORT, () => console.log(`mtun dzai:> running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Cherry Server V8 PRO running on port ${PORT}`));
