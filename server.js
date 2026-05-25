@@ -36,7 +36,7 @@ function initDatabase() {
             if(u.gameScore === undefined) { u.gameScore = 0; needsUpdate = true; }
             if(u.blocks === undefined) { u.blocks = []; needsUpdate = true; }
             if(u.archives === undefined) { u.archives = []; needsUpdate = true; }
-            if(u.phone === undefined) { u.phone = "Chưa có"; needsUpdate = true; }
+            if(u.phone === undefined) { u.phone = "Chưa cập nhật"; needsUpdate = true; }
         });
         if(!db.leaderboard) { db.leaderboard = []; needsUpdate = true; }
         if(!db.dailyWinner) { db.dailyWinner = null; needsUpdate = true; }
@@ -54,7 +54,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 const sessionMiddleware = session({
-    secret: 'cherry-blossom-secret-key-pro-v10',
+    secret: 'cherry-blossom-secret-key-pro-v11',
     resave: false, saveUninitialized: true,
     store: new MemoryStore({ checkPeriod: 86400000 }), 
     cookie: { maxAge: 24 * 60 * 60 * 1000 }
@@ -66,18 +66,24 @@ io.use((socket, next) => { sessionMiddleware(socket.request, socket.request.res 
 let onlineUsers = {}; 
 
 // ==========================================
-// --- 3. API TÀI KHOẢN CHUẨN ---
+// --- 3. API TÀI KHOẢN (BẢO MẬT NGHIÊM NGẶT) ---
 // ==========================================
 app.post('/api/register', (req, res) => {
     const { username, phone, email, password, confirmPassword } = req.body;
-    if (username.length < 4) return res.status(400).json({ msg: "Tên đăng nhập >= 4 ký tự!" });
-    if (password !== confirmPassword) return res.status(400).json({ msg: "Mật khẩu không khớp!" });
+    
+    if (!username || username.trim().length < 4) return res.status(400).json({ msg: "Tên đăng nhập phải từ 4 ký tự trở lên!" });
+    if (!phone || !/^[0-9]{10,11}$/.test(phone)) return res.status(400).json({ msg: "Số điện thoại không hợp lệ (yêu cầu 10-11 số)!" });
+    if (!password || password.length < 6 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(password)) {
+        return res.status(400).json({ msg: "Mật khẩu quá yếu! Yêu cầu >= 6 ký tự, bao gồm cả chữ và số." });
+    }
+    if (password !== confirmPassword) return res.status(400).json({ msg: "Mật khẩu xác nhận không khớp!" });
 
     const db = readDB();
-    if (db.users.find(u => u.username === username)) return res.status(400).json({ msg: "Tài khoản đã tồn tại!" });
+    if (db.users.find(u => u.username === username.trim())) return res.status(400).json({ msg: "Tài khoản đã tồn tại!" });
+    if (db.users.find(u => u.phone === phone)) return res.status(400).json({ msg: "Số điện thoại này đã được đăng ký!" });
 
     const newUser = {
-        id: 'user_' + Date.now(), username, phone: phone || "Chưa có", email: email || "",
+        id: 'user_' + Date.now(), username: username.trim(), phone: phone, email: email || "",
         password: bcrypt.hashSync(password, 10), displayName: "", role: "user",
         isBanned: false, banUntil: null, isMuted: false, muteUntil: null,
         friends: [], blocks: [], archives: [], gender: "secret", dob: "", bio: "", gameScore: 0
@@ -88,17 +94,25 @@ app.post('/api/register', (req, res) => {
 });
 
 app.post('/api/forgot-password', (req, res) => {
-    const { username, phone, newPassword } = req.body; const db = readDB();
+    const { username, phone, newPassword } = req.body; 
+    if (!newPassword || newPassword.length < 6 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(newPassword)) {
+        return res.status(400).json({ msg: "Mật khẩu mới quá yếu! Yêu cầu >= 6 ký tự, bao gồm cả chữ và số." });
+    }
+    const db = readDB();
     const user = db.users.find(u => u.username === username && u.phone === phone);
-    if (!user) return res.status(400).json({ msg: "Thông tin không chính xác!" });
+    if (!user) return res.status(400).json({ msg: "Tên đăng nhập hoặc SĐT không chính xác!" });
+    
     user.password = bcrypt.hashSync(newPassword, 10); writeDB(db);
     res.json({ msg: "Khôi phục mật khẩu thành công! Vui lòng đăng nhập lại." });
 });
 
 app.post('/api/setup-profile', (req, res) => {
     if (!req.session.userId) return res.status(401).json({ msg: "Chưa đăng nhập!" });
+    const { displayName } = req.body;
+    if (!displayName || displayName.trim().length < 2) return res.status(400).json({ msg: "Tên hiển thị quá ngắn!" });
+    
     const db = readDB(); const user = db.users.find(u => u.id === req.session.userId);
-    if(user) { user.displayName = req.body.displayName; writeDB(db); }
+    if(user) { user.displayName = displayName.trim(); writeDB(db); }
     res.json({ msg: "Thành công!", role: user ? user.role : 'user' });
 });
 
@@ -129,7 +143,7 @@ app.get('/api/me', (req, res) => {
 
 
 // ==========================================
-// --- 4. HỆ THỐNG CHAT & ADMIN (KHÔI PHỤC) ---
+// --- 4. HỆ THỐNG CHAT & ADMIN ---
 // ==========================================
 io.on('connection', (socket) => {
     const session = socket.request.session;
@@ -170,12 +184,14 @@ io.on('connection', (socket) => {
 
     socket.on('updateMyProfile', (data, cb) => {
         if(checkBanStatus()) return; const db = readDB(); const user = db.users.find(u => u.id === currentUserId);
+        if(data.phone && !/^[0-9]{10,11}$/.test(data.phone)) return cb({ success: false, msg: "SĐT không hợp lệ!" });
         user.displayName = data.displayName; user.phone = data.phone; user.email = data.email; user.gender = data.gender; user.dob = data.dob; user.bio = data.bio; writeDB(db); 
         cb({ success: true, msg: "Lưu hồ sơ thành công!" }); sendUserDataUpdate(currentUserId, socket);
     });
 
     socket.on('changePasswordInternal', ({ oldPass, newPass }, cb) => {
         if(checkBanStatus()) return; const db = readDB(); const user = db.users.find(u => u.id === currentUserId);
+        if (!newPass || newPass.length < 6 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(newPass)) return cb({ success: false, msg: "Mật khẩu mới quá yếu!" });
         if (user && bcrypt.compareSync(oldPass, user.password)) { user.password = bcrypt.hashSync(newPass, 10); writeDB(db); cb({ success: true, msg: "Đổi pass thành công!" }); } else cb({ success: false, msg: "Pass cũ sai!" });
     });
 
@@ -198,17 +214,19 @@ io.on('connection', (socket) => {
     socket.on('toggleBlock', (tId) => { if(checkBanStatus()) return; const db = readDB(); const u = db.users.find(x => x.id === currentUserId); const idx = u.blocks.indexOf(tId); if (idx > -1) u.blocks.splice(idx, 1); else u.blocks.push(tId); writeDB(db); sendUserDataUpdate(currentUserId, socket); if(onlineUsers[tId]) sendUserDataUpdate(tId, io.to(onlineUsers[tId])); });
     socket.on('toggleArchive', (tId) => { if(checkBanStatus()) return; const db = readDB(); const u = db.users.find(x => x.id === currentUserId); const idx = u.archives.indexOf(tId); if (idx > -1) u.archives.splice(idx, 1); else u.archives.push(tId); writeDB(db); sendUserDataUpdate(currentUserId, socket); });
 
-    // --- ADMIN (ĐÃ KHÔI PHỤC HOÀN TOÀN TÍNH NĂNG) ---
+    // --- ADMIN (FULL CHỨC NĂNG) ---
     socket.on('verifyAdminAuth', (pass, cb) => { const db = readDB(); const a = db.users.find(u => u.id === currentUserId && u.role === 'admin'); if (a && bcrypt.compareSync(pass, a.password)) cb({ success: true }); else cb({ success: false, msg: "Sai mật mã!" }); });
     socket.on('adminGetUsers', () => { const db = readDB(); if (db.users.find(u => u.id === currentUserId && u.role === 'admin')) socket.emit('adminUsersList', db.users.map(u => ({ id: u.id, username: u.username, displayName: u.displayName, phone: u.phone, email: u.email, role: u.role, isBanned: u.isBanned, banUntil: u.banUntil, isMuted: u.isMuted, muteUntil: u.muteUntil, isOnline: !!onlineUsers[u.id] }))); });
     
-    // Đổi tên + Đổi Pass cho người dùng
     socket.on('adminEditUser', (data) => {
         const db = readDB(); if (db.users.find(u => u.id === currentUserId && u.role === 'admin')) {
             const targetUser = db.users.find(u => u.id === data.id);
             if (targetUser) {
                 if(data.displayName) targetUser.displayName = data.displayName;
-                if(data.newPassword) targetUser.password = bcrypt.hashSync(data.newPassword, 10);
+                if(data.newPassword) {
+                    if(data.newPassword.length < 6) return socket.emit('actionError', "Mật khẩu phải >= 6 ký tự!");
+                    targetUser.password = bcrypt.hashSync(data.newPassword, 10);
+                }
                 writeDB(db); socket.emit('actionSuccess', "Cập nhật thành công!");
                 socket.emit('adminUsersList', db.users.map(u => ({ id: u.id, username: u.username, displayName: u.displayName, phone: u.phone, email: u.email, role: u.role, isBanned: u.isBanned, banUntil: u.banUntil, isMuted: u.isMuted, muteUntil: u.muteUntil, isOnline: !!onlineUsers[u.id] })));
             }
@@ -236,10 +254,9 @@ io.on('connection', (socket) => {
 
 
     // =====================================
-    // --- 5. GAME ENGINE SIÊU TO (V10) ---
+    // --- 5. GAME ENGINE (MAP 3000x3000) ---
     // =====================================
-    const MAP_WIDTH = 3000;
-    const MAP_HEIGHT = 3000;
+    const MAP_WIDTH = 3000; const MAP_HEIGHT = 3000;
 
     socket.on('gameInput', ({ mode, roomId, keys, aimAngle, isShooting }) => {
         try {
@@ -261,7 +278,6 @@ io.on('connection', (socket) => {
         } catch(e) {}
     });
 
-    // Khởi tạo Player
     function spawnPlayer(mode) {
         const db = readDB(); const user = db.users.find(u => u.id === currentUserId); if(!user) return null;
         return { 
@@ -279,10 +295,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('leaveGame', (mode) => {
-        try {
-            if(mode === 'ffa') { socket.leave('ffaGameRoom'); delete ffaGameState.players[socket.id]; }
-            else if(mode === 'zombie') { socket.leave('zombieGameRoom'); delete zombieGameState.players[socket.id]; }
-        } catch(e){}
+        try { if(mode === 'ffa') { socket.leave('ffaGameRoom'); delete ffaGameState.players[socket.id]; } else if(mode === 'zombie') { socket.leave('zombieGameRoom'); delete zombieGameState.players[socket.id]; } } catch(e){}
     });
 
     socket.on('respawnGame', (mode) => {
@@ -313,7 +326,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => { 
         delete onlineUsers[currentUserId]; io.emit('userStatusChange', { userId: currentUserId, status: 'offline' }); 
         delete ffaGameState.players[socket.id]; delete zombieGameState.players[socket.id];
-        for(let roomId in pkRooms) { if(pkRooms[roomId].players[socket.id]) { delete pkRooms[roomId].players[socket.id]; io.to(roomId).emit('actionError', "Đối thủ đã mất kết nối!"); io.to(roomId).emit('pkRoomClosed'); delete pkRooms[roomId]; } }
+        for(let roomId in pkRooms) { if(pkRooms[roomId].players[socket.id]) { delete pkRooms[roomId].players[socket.id]; io.to(roomId).emit('actionError', "Đối thủ mất kết nối!"); io.to(roomId).emit('pkRoomClosed'); delete pkRooms[roomId]; } }
     });
 });
 
@@ -323,14 +336,13 @@ io.on('connection', (socket) => {
 let ffaGameState = { players: {}, bullets: [] };
 let zombieGameState = { players: {}, bullets: [], zombies: [] };
 let pkRooms = {};
-const MAP_WIDTH = 3000; const MAP_HEIGHT = 3000;
 
 function saveScore(userId, score, mode) {
-    if(score < 10) return; // Chỉ lưu nếu có chơi đàng hoàng
+    if(score < 10) return; 
     const db = readDB(); const user = db.users.find(u => u.id === userId); if(!user) return;
     db.leaderboard.push({ name: user.displayName || user.username, score: score, mode: mode, date: new Date().toISOString() });
     db.leaderboard.sort((a,b) => b.score - a.score);
-    db.leaderboard = db.leaderboard.slice(0, 50); // Lưu top 50
+    db.leaderboard = db.leaderboard.slice(0, 50); 
     writeDB(db);
 }
 
@@ -367,14 +379,13 @@ setInterval(() => {
         });
         io.to('ffaGameRoom').emit('gameStateUpdate', { mode: 'ffa', state: ffaGameState });
 
-        // 2. ZOMBIE ENGINE (CO-OP PVE - CHẾT LÀ HẾT)
+        // 2. ZOMBIE ENGINE
         handleMovement(zombieGameState.players, 6);
         zombieGameState.bullets.forEach(b => { b.x += b.vx; b.y += b.vy; b.life--; });
         zombieGameState.bullets = zombieGameState.bullets.filter(b => b.life > 0);
         
         let alivePlayersCount = Object.values(zombieGameState.players).filter(p => p.hp > 0).length;
         if(alivePlayersCount > 0 && zombieGameState.zombies.length < alivePlayersCount * 25 && Math.random() < 0.1) {
-            // Spawn zombie quanh người chơi ngẫu nhiên (Cách xa khoảng 500-800px)
             let randomP = Object.values(zombieGameState.players).find(p => p.hp > 0);
             if(randomP) {
                 let angle = Math.random() * Math.PI * 2; let dist = 600 + Math.random() * 300;
@@ -399,7 +410,7 @@ setInterval(() => {
         for(let id in zombieGameState.players) {
             let p = zombieGameState.players[id];
             if(p.hp <= 0 && !p.isDeadNotified) {
-                p.isDeadNotified = true; // Tránh gọi nhiều lần
+                p.isDeadNotified = true;
                 saveScore(p.userId, p.score, 'Săn Zombie');
                 io.to(id).emit('playerDied', { score: p.score, mode: 'zombie' });
             }
@@ -429,7 +440,7 @@ setInterval(() => {
                 io.to(roomId).emit('gameStateUpdate', { mode: 'pk', state: room });
             }
         }
-    } catch(err) { console.error("Lỗi Game Loop V10:", err); } // Chống sập tuyệt đối
+    } catch(err) { console.error("Lỗi Game Loop:", err); } 
 }, 1000 / 60);
 
 // Đồng bộ User
@@ -444,13 +455,12 @@ function sendUserDataUpdate(userId, socketTarget) {
 }
 
 // Bảng Xếp Hạng & Vinh Danh
-setInterval(() => { io.emit('leaderboardUpdate', readDB().leaderboard); }, 5 * 60 * 1000); // Gửi 5 phút/lần
+setInterval(() => { io.emit('leaderboardUpdate', readDB().leaderboard); }, 5 * 60 * 1000); 
 setInterval(() => {
     const now = new Date();
     if(now.getHours() === 0 && now.getMinutes() === 0) {
-        const db = readDB();
-        if(db.leaderboard && db.leaderboard.length > 0) { db.dailyWinner = db.leaderboard[0]; writeDB(db); io.emit('dailyWinnerNotice', db.dailyWinner); }
+        const db = readDB(); if(db.leaderboard && db.leaderboard.length > 0) { db.dailyWinner = db.leaderboard[0]; writeDB(db); io.emit('dailyWinnerNotice', db.dailyWinner); }
     }
 }, 60000);
 
-server.listen(PORT, () => console.log(`Cherry Server V10 MAX running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Cherry Server V11 ESPORTS running on port ${PORT}`));
