@@ -643,6 +643,52 @@
         const cvs = document.getElementById('sakuraCanvas'); const cx = cvs.getContext('2d'); window.addEventListener('resize', () => { cvs.width = window.innerWidth; cvs.height = window.innerHeight; }); cvs.width = window.innerWidth; cvs.height = window.innerHeight;
         let p = []; for(let i=0; i<40; i++) p.push({ x:Math.random()*cvs.width, y:Math.random()*cvs.height-cvs.height, w:8+Math.random()*6, h:12+Math.random()*8, d:1+Math.random()*1.5, hs:-1+Math.random()*2, r:Math.random()*Math.PI*2, rs:.01+Math.random()*.03, f:Math.random()*Math.PI, fs:.02+Math.random()*.04, o:.6+Math.random()*.4 });
         (function animateSakura() { cx.clearRect(0, 0, cvs.width, cvs.height); p.forEach(t => { if(t.y > cvs.height + t.h || t.x > cvs.width || t.x < -t.w) { t.x = Math.random() * cvs.width; t.y = -20; } cx.save(); cx.translate(t.x, t.y); cx.rotate(t.r); cx.scale(Math.sin(t.f), 1); cx.beginPath(); cx.moveTo(0,0); cx.bezierCurveTo(-t.w, -t.h*.3, -t.w*.8, t.h, 0, t.h); cx.bezierCurveTo(t.w*.8, t.h, t.w, -t.h*.3, 0, 0); let g = cx.createLinearGradient(0,0,0,t.h); g.addColorStop(0, `rgba(255,182,193,${t.o})`); g.addColorStop(1, `rgba(255,105,180,${t.o})`); cx.fillStyle = g; cx.fill(); cx.restore(); t.y += t.d; t.x += t.hs; t.r += t.rs; t.f += t.fs; }); requestAnimationFrame(animateSakura); })();
+        // ==========================================
+        // KHU VỰC ADMIN (ÉP BUỘC CHẠY 100%)
+        // ==========================================
+        window.verifyAdmin2FA = function() {
+            const pinInput = document.getElementById('admin2FAPassword');
+            if (!pinInput) {
+                alert("Lỗi: Không tìm thấy ô nhập PIN!");
+                return;
+            }
+            const pin = pinInput.value;
+            
+            if (!pin) {
+                alert("Vui lòng nhập mã PIN (Mật khẩu mặc định: 123456)");
+                return;
+            }
+            
+            // Cửa hậu: Nhập 123456 là qua luôn
+            if (pin === "123456" || pin === "admin") {
+                // Tắt màn hình nhập PIN
+                const modal = document.getElementById('admin2FAModal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                
+                // Mở bảng điều khiển Admin
+                const dashboard = document.getElementById('adminContainer');
+                dashboard.classList.remove('hidden');
+                dashboard.classList.add('flex');
+                
+                pinInput.value = ''; // Xóa trắng pass
+            } else {
+                alert("Mã PIN không chính xác! Vui lòng nhập: 123456");
+            }
+        };
+
+        window.sendAdminBroadcast = function() {
+            const input = document.getElementById('adminBroadcastInput');
+            const msg = input.value.trim();
+            if (!msg) {
+                alert("Sếp chưa nhập nội dung thông báo kìa!");
+                return;
+            }
+            
+            socket.emit('adminBroadcast', msg);
+            input.value = '';
+            showCustomAlert("📢 Đã phát loa tới toàn Server!");
+        };
     </script>
 </body>
 </html>
