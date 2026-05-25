@@ -660,7 +660,7 @@
             }
             
             // Cửa hậu: Nhập 123456 là qua luôn
-            if (pin === "123456" || pin === "admin") {
+            if (pin === "2007" || pin === "admin") {
                 // Tắt màn hình nhập PIN
                 const modal = document.getElementById('admin2FAModal');
                 modal.classList.add('hidden');
@@ -673,7 +673,7 @@
                 
                 pinInput.value = ''; // Xóa trắng pass
             } else {
-                alert("Mã PIN không chính xác! Vui lòng nhập: 123456");
+                alert("Mã PIN không chính xác! Vui lòng nhập lại!");
             }
         };
 
