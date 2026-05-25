@@ -402,6 +402,8 @@ io.on('connection', (socket) => {
 // =======================================================
 // 6. GAME LOOP V16 (ZONE, ELO, DUNGEONS, STAMINA)
 // =======================================================
+const MAP_WIDTH = 3000;
+const MAP_HEIGHT = 3000;
 let ffaGameState = { players: {}, bullets: [], items: [], zone: { x: MAP_WIDTH/2, y: MAP_HEIGHT/2, radius: 2500 } }; // V16 Zone
 let dungeonGameState = { players: {}, bullets: [], bosses: [], items: [], wave: 1 }; // V16 Phụ bản
 let safezoneState = { players: {} }; // V16 Safezone Lobby
