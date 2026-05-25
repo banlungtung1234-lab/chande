@@ -33,7 +33,7 @@
     <div id="dailyWinnerBanner" class="fixed top-0 left-0 w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 font-black text-center py-2 z-[9999] hidden shadow-md text-xs md:text-sm animate-pulse">🌟 VINH DANH TOP 1 SERVER HÔM NAY: <span id="dwName" class="text-red-700"></span> - ĐIỂM: <span id="dwScore" class="text-red-700"></span> (<span id="dwMode"></span>) 🌟</div>
     <canvas id="sakuraCanvas" class="sakura-canvas"></canvas>
 
-    <div id="globalLoading" class="fixed inset-0 bg-pink-100/95 z-[9999] flex flex-col justify-center items-center transition-opacity duration-300"><div class="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 mb-4"></div><p class="text-pink-600 font-bold animate-pulse uppercase">Đang đồng bộ dữ liệu V11 Esports...</p></div>
+    <div id="globalLoading" class="fixed inset-0 bg-pink-100/95 z-[9999] flex flex-col justify-center items-center transition-opacity duration-300"><div class="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 mb-4"></div><p class="text-pink-600 font-bold animate-pulse uppercase">Đang tải...</p></div>
     <div id="bannedContainer" class="fixed inset-0 bg-red-950/95 z-[9995] hidden flex-col items-center justify-center backdrop-blur-md text-white p-6 text-center"><span class="text-8xl mb-6 animate-pulse">⚖️</span><h1 class="text-5xl font-black text-red-500 mb-4 uppercase">Tài Khoản Bị Khóa</h1><p class="text-xl font-bold text-gray-300 mb-2">Bạn đã vi phạm tiêu chuẩn của hệ thống.</p><p class="text-3xl font-black text-yellow-400 mb-8" id="bannedTimeDisplay">Thời hạn: Đang tính toán...</p><button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white font-black px-10 py-4 rounded-2xl shadow-lg transition">ĐĂNG XUẤT</button></div>
 
     <div id="imageLightbox" class="fixed inset-0 bg-black/95 z-[9998] hidden items-center justify-center backdrop-blur-sm cursor-zoom-out opacity-0 transition-opacity duration-300" onclick="closeLightbox()"><img id="lightboxImg" src="" class="max-w-[90vw] max-h-[90vh] object-contain rounded-xl shadow-2xl scale-95 transition-transform duration-300"><button class="absolute top-6 right-6 text-white/50 hover:text-white font-black text-4xl">✕</button></div>
@@ -87,8 +87,8 @@
         let currentUser = null, activeChatUserId = null, editingMsgId = null, currentAdminChatUserId = null;
         let globalDataStore = { friends: [], messages: [], requests: [], blocks: [], archives: [], isMuted: false };
         
-        const notifSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_79eff4e14f.mp3');
-        const memeUrls = ['https://www.myinstants.com/media/sounds/vine-boom.mp3', 'https://www.myinstants.com/media/sounds/quack_5.mp3', 'https://www.myinstants.com/media/sounds/boing_1.mp3'];
+        const notifSound = new Audio('https://www.myinstants.com/media/sounds/taco-bell-bong-sfx.mp3');
+        const memeUrls = ['https://www.myinstants.com/media/sounds/vine-boom.mp3', 'https://www.myinstants.com/media/sounds/metal-pipe-clang.mp3', 'https://www.myinstants.com/media/sounds/quack_5.mp3', 'https://www.myinstants.com/media/sounds/boing_1.mp3'];
         const memeSounds = memeUrls.map(u => new Audio(u));
         if ("Notification" in window) { Notification.requestPermission(); }
         
@@ -165,7 +165,7 @@
         function updateChatHeader() { 
             const f = globalDataStore.friends.find(x => x.id === activeChatUserId); if(!f) return; 
             document.getElementById('chatTargetName').innerText = f.displayName; document.getElementById('chatTargetStatus').innerText = f.isOnline ? 'Đang trực tuyến' : 'Ngoại tuyến'; 
-            document.getElementById('btnBlockToggle').innerText = f.isBlocked ? 'Mở Chặn 🔓' : 'Chặn 🚫'; document.getElementById('btnArchiveToggle').innerText = f.isArchived ? 'Bỏ Lưu 📥' : 'Lưu Trữ 📤'; 
+            document.getElementById('btnBlockToggle').innerText = f.isBlocked ? 'Mở Chặn' : 'Chặn'; document.getElementById('btnArchiveToggle').innerText = f.isArchived ? 'Bỏ Lưu' : 'Lưu Trữ'; 
             const pkBtn = document.getElementById('btnInvitePK'); if(f.displayName === 'Hệ Thống Admin' || !f.isOnline) pkBtn.classList.add('hidden'); else pkBtn.classList.remove('hidden');
             if(f.displayName === 'Hệ Thống Admin') document.getElementById('btnBlockToggle').classList.add('hidden'); else document.getElementById('btnBlockToggle').classList.remove('hidden'); 
             if (f.isBlocked || f.isBlockedBy) { document.getElementById('normalChatUI').classList.add('hidden'); document.getElementById('normalChatUI').classList.remove('flex'); document.getElementById('blockedChatUI').classList.remove('hidden'); document.getElementById('blockedChatUI').classList.add('flex'); } 
