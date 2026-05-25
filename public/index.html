@@ -495,7 +495,44 @@
         }
         function cancelVoiceRecord() { if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); clearInterval(recordTimer); document.getElementById('voiceRecordingUI').classList.add('hidden'); document.getElementById('voiceRecordingUI').classList.remove('flex'); document.getElementById('normalChatUI').classList.remove('hidden'); document.getElementById('normalChatUI').classList.add('flex'); document.getElementById('recordTimer').innerText = "00:00"; }
         function stopAndSendVoice() { if(!mediaRecorder) return; mediaRecorder.stop(); mediaRecorder.addEventListener("stop", () => { const aBlob = new Blob(audioChunks, { type: 'audio/webm' }); const r = new FileReader(); r.readAsDataURL(aBlob); r.onloadend = () => { socket.emit('sendMessage', { toUserId: activeChatUserId, type: 'audio', imgData: r.result, replyTo: replyToMsgId }); cancelVoiceRecord(); cancelMsgContext(); }; }); }
+        
+        // ==========================================
+        // KHU VỰC DÀNH RIÊNG CHO ADMIN
+        // ==========================================
+        function verifyAdmin2FA() {
+            const pin = document.getElementById('admin2FAPassword').value;
+            if (!pin) return showCustomAlert("Vui lòng nhập mã PIN!");
+            
+            // Tạm thời mở khóa bằng mã PIN dự phòng (bạn có thể đổi '123456' thành pass khác)
+            if (pin === "123456" || pin === "admin") {
+                document.getElementById('admin2FAModal').classList.add('hidden');
+                document.getElementById('admin2FAModal').classList.remove('flex');
+                document.getElementById('adminContainer').classList.remove('hidden');
+                document.getElementById('adminContainer').classList.add('flex');
+                document.getElementById('admin2FAPassword').value = ''; // Xóa trắng ô nhập
+            } else {
+                // Nếu sai pass thì gọi Server kiểm tra (nếu Server có hỗ trợ)
+                socket.emit('verifyAdmin', pin, (res) => {
+                    if (res && res.success) {
+                        document.getElementById('admin2FAModal').classList.add('hidden');
+                        document.getElementById('admin2FAModal').classList.remove('flex');
+                        document.getElementById('adminContainer').classList.remove('hidden');
+                        document.getElementById('adminContainer').classList.add('flex');
+                    } else {
+                        showCustomAlert("Mã PIN không chính xác! Cảnh báo đột nhập!");
+                    }
+                });
+            }
+        }
 
+        function sendAdminBroadcast() {
+            const msg = document.getElementById('adminBroadcastInput').value.trim();
+            if (!msg) return showCustomAlert("Sếp chưa nhập nội dung thông báo kìa!");
+            
+            socket.emit('adminBroadcast', msg);
+            document.getElementById('adminBroadcastInput').value = '';
+            showCustomAlert("📢 Đã phát loa tới toàn Server!");
+        }
         // ==========================================
         // GAME ENGINE V16 
         // ==========================================
