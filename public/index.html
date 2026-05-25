@@ -2,16 +2,12 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>mtun depzai:></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { 
-            background: linear-gradient(135deg, #ffe3ec 0%, #ffb3c6 50%, #ff8fa3 100%); 
-            background-size: 400% 400%; animation: gradientBG 15s ease infinite; 
-            overflow-x: hidden; touch-action: none; 
-        }
+        body { background: linear-gradient(135deg, #ffe3ec 0%, #ffb3c6 50%, #ff8fa3 100%); background-size: 400% 400%; animation: gradientBG 15s ease infinite; overflow-x: hidden; touch-action: none; overscroll-behavior: none; }
         @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         .sakura-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
         .glass { background: rgba(255, 255, 255, .85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 182, 193, .5); box-shadow: 0 8px 32px 0 rgba(255, 105, 180, .15); transition: all .3s ease; }
@@ -19,80 +15,42 @@
         .zh { transition: transform .3s cubic-bezier(.4, 0, .2, 1); } .zh:hover { transform: scale(1.02); }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255, 182, 193, .8); border-radius: 10px; } ::-webkit-scrollbar-thumb:hover { background: #ff8fa3; }
         .tc:checked { right: 0; border-color: #ec4899; } .tc:checked + .tl { background-color: #ec4899; } .tc { right: 4px; z-index: 1; border-color: #e5e7eb; transition: all .3s; } .tl { width: 2.5rem; height: 1.25rem; background-color: #e5e7eb; border-radius: 9999px; transition: all .3s; }
+        
+        #mobileControls { display: none; }
+        @media (max-width: 900px) {
+            #mobileControls.active { display: block; }
+            #landscapeOverlay { display: flex; }
+            @media (orientation: landscape) { #landscapeOverlay { display: none !important; } }
+        }
+        #joystickBase { transition: opacity 0.15s; opacity: 0; }
         #joystickKnob { transition: transform 0.05s linear; }
+        #miniMapContainer { border: 2px solid rgba(255,255,255,0.7); border-radius: 50%; overflow: hidden; background: rgba(0,0,0,0.6); box-shadow: 0 0 15px rgba(0,0,0,0.8); }
     </style>
 </head>
 <body class="h-screen font-sans antialiased text-gray-800 relative select-none">
     
-    <div id="dailyWinnerBanner" class="fixed top-0 left-0 w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 font-black text-center py-2 z-[9999] hidden shadow-md text-xs md:text-sm animate-pulse">
-        🌟 VINH DANH TOP 1 SERVER HÔM NAY: <span id="dwName" class="text-red-700"></span> - ĐIỂM: <span id="dwScore" class="text-red-700"></span> (<span id="dwMode"></span>) 🌟
-    </div>
-
+    <div id="landscapeOverlay" class="fixed inset-0 bg-black/95 z-[99999] hidden flex-col items-center justify-center text-white text-center p-6 backdrop-blur-md"><div class="text-6xl mb-6 animate-pulse">🔄</div><h2 class="text-2xl font-black text-pink-500 mb-2 uppercase">Xoay Ngang Điện Thoại</h2><p class="text-gray-300 font-bold text-sm">Trải nghiệm Game cần không gian rộng lớn!</p></div>
+    <div id="dailyWinnerBanner" class="fixed top-0 left-0 w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 font-black text-center py-2 z-[9999] hidden shadow-md text-xs md:text-sm animate-pulse">🌟 VINH DANH TOP 1 SERVER HÔM NAY: <span id="dwName" class="text-red-700"></span> - ĐIỂM: <span id="dwScore" class="text-red-700"></span> (<span id="dwMode"></span>) 🌟</div>
     <canvas id="sakuraCanvas" class="sakura-canvas"></canvas>
 
-    <div id="globalLoading" class="fixed inset-0 bg-pink-100/95 z-[9999] flex flex-col justify-center items-center transition-opacity duration-300">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 mb-4"></div>
-        <p class="text-pink-600 font-bold animate-pulse uppercase">Đang đồng bộ dữ liệu V10 Tối Thượng...</p>
-    </div>
+    <div id="globalLoading" class="fixed inset-0 bg-pink-100/95 z-[9999] flex flex-col justify-center items-center transition-opacity duration-300"><div class="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 mb-4"></div><p class="text-pink-600 font-bold animate-pulse uppercase">Đang đồng bộ dữ liệu V11 Esports...</p></div>
+    <div id="bannedContainer" class="fixed inset-0 bg-red-950/95 z-[9995] hidden flex-col items-center justify-center backdrop-blur-md text-white p-6 text-center"><span class="text-8xl mb-6 animate-pulse">⚖️</span><h1 class="text-5xl font-black text-red-500 mb-4 uppercase">Tài Khoản Bị Khóa</h1><p class="text-xl font-bold text-gray-300 mb-2">Bạn đã vi phạm tiêu chuẩn của hệ thống.</p><p class="text-3xl font-black text-yellow-400 mb-8" id="bannedTimeDisplay">Thời hạn: Đang tính toán...</p><button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white font-black px-10 py-4 rounded-2xl shadow-lg transition">ĐĂNG XUẤT</button></div>
 
-    <div id="bannedContainer" class="fixed inset-0 bg-red-950/95 z-[9995] hidden flex-col items-center justify-center backdrop-blur-md text-white p-6 text-center">
-        <span class="text-8xl mb-6 animate-pulse">⚖️</span>
-        <h1 class="text-5xl font-black text-red-500 mb-4 uppercase">Tài Khoản Bị Khóa</h1>
-        <p class="text-xl font-bold text-gray-300 mb-2">Bạn đã vi phạm tiêu chuẩn của hệ thống.</p>
-        <p class="text-3xl font-black text-yellow-400 mb-8" id="bannedTimeDisplay">Thời hạn: Đang tính toán...</p>
-        <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white font-black px-10 py-4 rounded-2xl shadow-lg transition">ĐĂNG XUẤT</button>
-    </div>
-
-    <div id="imageLightbox" class="fixed inset-0 bg-black/95 z-[9998] hidden items-center justify-center backdrop-blur-sm cursor-zoom-out opacity-0 transition-opacity duration-300" onclick="closeLightbox()">
-        <img id="lightboxImg" src="" class="max-w-[90vw] max-h-[90vh] object-contain rounded-xl shadow-2xl scale-95 transition-transform duration-300">
-        <button class="absolute top-6 right-6 text-white/50 hover:text-white font-black text-4xl">✕</button>
-    </div>
-    <div id="customAlertModal" class="fixed inset-0 bg-black/50 z-[9000] hidden items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="glass p-6 rounded-3xl max-w-sm w-full mx-4 text-center transform scale-95 transition-transform duration-300" id="customAlertBox">
-            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-pink-100 mb-4"><span class="text-4xl">🌸</span></div>
-            <h3 class="text-xl font-black text-pink-700 mb-2 uppercase" id="customAlertTitle">Thông báo</h3>
-            <p class="text-sm text-gray-700 mb-6 font-medium" id="customAlertMsg">Nội dung</p>
-            <button onclick="closeCustomAlert()" class="w-full bg-pink-500 text-white font-black py-3.5 rounded-xl hover:shadow-lg transition">ĐỒNG Ý</button>
-        </div>
-    </div>
-    <div id="pkInviteModal" class="fixed inset-0 bg-black/70 z-[9500] hidden items-center justify-center backdrop-blur-sm">
-        <div class="glass p-8 rounded-[2rem] max-w-sm w-full mx-4 text-center transform scale-95 transition-transform duration-300" id="pkInviteBox">
-            <div class="text-6xl mb-4 animate-bounce">⚔️</div>
-            <h3 class="text-2xl font-black text-red-600 mb-2 uppercase">Thách Đấu PK!</h3>
-            <p class="text-sm text-gray-700 font-bold mb-6"><span id="pkChallengerName" class="text-pink-600 text-lg">Ai đó</span> muốn phân tài với bạn!</p>
-            <div class="flex space-x-3"><button onclick="respondPK(false)" class="flex-1 bg-gray-300 text-gray-800 font-black py-3.5 rounded-xl">TỪ CHỐI</button><button onclick="respondPK(true)" class="flex-1 bg-red-500 text-white font-black py-3.5 rounded-xl animate-pulse">CHẤP NHẬN</button></div>
-        </div>
-    </div>
-    <div id="popupAlert" class="fixed top-10 left-1/2 -translate-x-1/2 glass px-6 py-3.5 rounded-full shadow-2xl z-[900] hidden scale-95 opacity-0 flex items-center space-x-3 max-w-md w-max transition-all duration-300">
-        <span class="text-2xl animate-bounce">💬</span><div class="flex-1 pr-4"><h4 id="popupTitle" class="font-bold text-pink-600 text-sm">Tin nhắn mới</h4><p id="popupContent" class="text-gray-700 text-xs font-medium truncate w-48">Nội dung...</p></div><button onclick="closePopup()" class="text-gray-400 font-black">✕</button>
-    </div>
+    <div id="imageLightbox" class="fixed inset-0 bg-black/95 z-[9998] hidden items-center justify-center backdrop-blur-sm cursor-zoom-out opacity-0 transition-opacity duration-300" onclick="closeLightbox()"><img id="lightboxImg" src="" class="max-w-[90vw] max-h-[90vh] object-contain rounded-xl shadow-2xl scale-95 transition-transform duration-300"><button class="absolute top-6 right-6 text-white/50 hover:text-white font-black text-4xl">✕</button></div>
+    <div id="customAlertModal" class="fixed inset-0 bg-black/50 z-[9000] hidden items-center justify-center opacity-0 transition-opacity duration-300"><div class="glass p-6 rounded-3xl max-w-sm w-full mx-4 text-center transform scale-95 transition-transform duration-300" id="customAlertBox"><div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-pink-100 mb-4"><span class="text-4xl">🌸</span></div><h3 class="text-xl font-black text-pink-700 mb-2 uppercase" id="customAlertTitle">Thông báo</h3><p class="text-sm text-gray-700 mb-6 font-medium" id="customAlertMsg">Nội dung</p><button onclick="closeCustomAlert()" class="w-full bg-pink-500 text-white font-black py-3.5 rounded-xl hover:shadow-lg transition">ĐỒNG Ý</button></div></div>
+    <div id="pkInviteModal" class="fixed inset-0 bg-black/70 z-[9500] hidden items-center justify-center backdrop-blur-sm"><div class="glass p-8 rounded-[2rem] max-w-sm w-full mx-4 text-center transform scale-95 transition-transform duration-300" id="pkInviteBox"><div class="text-6xl mb-4 animate-bounce">⚔️</div><h3 class="text-2xl font-black text-red-600 mb-2 uppercase">Thách Đấu PK!</h3><p class="text-sm text-gray-700 font-bold mb-6"><span id="pkChallengerName" class="text-pink-600 text-lg">Ai đó</span> muốn phân tài với bạn!</p><div class="flex space-x-3"><button onclick="respondPK(false)" class="flex-1 bg-gray-300 text-gray-800 font-black py-3.5 rounded-xl">TỪ CHỐI</button><button onclick="respondPK(true)" class="flex-1 bg-red-500 text-white font-black py-3.5 rounded-xl animate-pulse">CHẤP NHẬN</button></div></div></div>
+    <div id="popupAlert" class="fixed top-10 left-1/2 -translate-x-1/2 glass px-6 py-3.5 rounded-full shadow-2xl z-[900] hidden scale-95 opacity-0 flex items-center space-x-3 max-w-md w-max transition-all duration-300"><span class="text-2xl animate-bounce">💬</span><div class="flex-1 pr-4"><h4 id="popupTitle" class="font-bold text-pink-600 text-sm">Tin nhắn mới</h4><p id="popupContent" class="text-gray-700 text-xs font-medium truncate w-48">Nội dung...</p></div><button onclick="closePopup()" class="text-gray-400 font-black">✕</button></div>
 
     <div id="authContainer" class="h-full flex items-center justify-center p-4 relative z-10 mt-6">
-        <div id="loginCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl zh">
-            <div class="text-center mb-8"><span class="text-6xl block mb-2">🌸</span><h2 class="text-3xl font-black text-pink-600">CHERRY V10</h2></div>
-            <form id="loginForm" class="space-y-4">
-                <div><input type="text" id="loginKey" placeholder="Tài khoản / Số điện thoại" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"></div>
-                <div><div class="relative"><input type="password" id="loginPassword" placeholder="Mật khẩu" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"><button type="button" onclick="togglePassView('loginPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button></div></div>
-                <div class="flex justify-between mt-2 px-1"><label class="flex items-center text-xs font-bold text-gray-600 cursor-pointer"><input type="checkbox" id="rememberMe" class="mr-2 w-4 h-4 rounded text-pink-500 focus:ring-pink-400"> Ghi nhớ</label><button type="button" onclick="switchAuthView('forgot')" class="text-xs text-pink-600 font-bold hover:underline">Quên mật khẩu?</button></div>
-                <button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-pink-600 transition text-lg mt-4">ĐĂNG NHẬP</button>
-            </form>
-            <p class="text-center text-sm mt-6 font-bold text-gray-600">Chưa có tài khoản? <button onclick="switchAuthView('register')" class="text-pink-600 font-black hover:underline">Đăng ký ngay</button></p>
-        </div>
-        <div id="registerCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl zh hidden"><h2 class="text-2xl font-black text-center text-pink-600 mb-6 uppercase">Tạo Tài Khoản</h2><form id="registerForm" class="space-y-4"><div><input type="text" id="regUsername" placeholder="Tên đăng nhập" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold"></div><div><input type="text" id="regPhone" placeholder="Số điện thoại" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold"></div><div><div class="relative"><input type="password" id="regPassword" placeholder="Mật khẩu" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold"><button type="button" onclick="togglePassView('regPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button></div></div><div><div class="relative"><input type="password" id="regConfirmPassword" placeholder="Xác nhận mật khẩu" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold"><button type="button" onclick="togglePassView('regConfirmPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button></div></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg mt-4">ĐĂNG KÝ</button></form><p class="text-center text-xs mt-5 font-bold text-gray-600">Đã có tài khoản? <button onclick="switchAuthView('login')" class="text-pink-600 hover:underline">Đăng nhập</button></p></div>
-        <div id="forgotCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl zh hidden"><h2 class="text-2xl font-black text-center text-pink-600 mb-6 uppercase">Khôi Phục Mật Khẩu</h2><form id="forgotForm" class="space-y-4"><div><input type="text" id="forgotUsername" placeholder="Tên đăng nhập" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"></div><div><input type="text" id="forgotPhone" placeholder="Số điện thoại lúc đăng ký" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"></div><div><div class="relative"><input type="password" id="forgotNewPassword" placeholder="Mật khẩu mới" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"><button type="button" onclick="togglePassView('forgotNewPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded">Hiện</button></div></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg mt-4">XÁC NHẬN</button></form><p class="text-center text-xs mt-5"><button type="button" onclick="switchAuthView('login')" class="text-gray-500 font-bold hover:text-pink-600 hover:underline">Quay lại Đăng nhập</button></p></div>
-        <div id="setupProfileCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl hidden"><h2 class="text-2xl font-black text-center text-pink-600 mb-2">Bước Cuối Cùng!</h2><p class="text-xs text-center mb-6 font-bold text-gray-500">Tạo biệt danh (Nickname) để mọi người nhận ra bạn</p><form id="setupProfileForm" class="space-y-5"><div><input type="text" id="setupDisplayName" required placeholder="Tên hiển thị..." class="w-full p-4 rounded-xl border-2 border-pink-200 text-center font-black text-xl text-pink-600 outline-none focus:border-pink-400"></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg">VÀO CHAT</button></form></div>
+        <div id="loginCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl zh"><div class="text-center mb-8"><span class="text-6xl block mb-2">🌸</span><h2 class="text-3xl font-black text-pink-600">CHERRY V11</h2></div><form id="loginForm" class="space-y-4"><div><input type="text" id="loginKey" placeholder="Tài khoản / Số điện thoại" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"></div><div><div class="relative"><input type="password" id="loginPassword" placeholder="Mật khẩu" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"><button type="button" onclick="togglePassView('loginPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button></div></div><div class="flex justify-between mt-2 px-1"><label class="flex items-center text-xs font-bold text-gray-600 cursor-pointer"><input type="checkbox" id="rememberMe" class="mr-2 w-4 h-4 rounded text-pink-500"> Ghi nhớ</label><button type="button" onclick="switchAuthView('forgot')" class="text-xs text-pink-600 font-bold hover:underline">Quên mật khẩu?</button></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-pink-600 transition text-lg mt-4">ĐĂNG NHẬP</button></form><p class="text-center text-sm mt-6 font-bold text-gray-600">Chưa có tài khoản? <button onclick="switchAuthView('register')" class="text-pink-600 font-black hover:underline">Đăng ký ngay</button></p></div>
+        <div id="registerCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl zh hidden"><h2 class="text-2xl font-black text-center text-pink-600 mb-6 uppercase">Tạo Tài Khoản</h2><form id="registerForm" class="space-y-4"><div><input type="text" id="regUsername" placeholder="Tên đăng nhập (>=4 ký tự)" minlength="4" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold"></div><div><input type="tel" id="regPhone" placeholder="Số điện thoại (10-11 số)" pattern="[0-9]{10,11}" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold"></div><div><div class="relative"><input type="password" id="regPassword" placeholder="Mật khẩu (>=6 ký tự, gồm chữ & số)" minlength="6" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold"><button type="button" onclick="togglePassView('regPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button></div></div><div><div class="relative"><input type="password" id="regConfirmPassword" placeholder="Xác nhận mật khẩu" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold"><button type="button" onclick="togglePassView('regConfirmPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button></div></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg mt-4">ĐĂNG KÝ</button></form><p class="text-center text-xs mt-5 font-bold text-gray-600">Đã có tài khoản? <button onclick="switchAuthView('login')" class="text-pink-600 hover:underline">Đăng nhập</button></p></div>
+        <div id="forgotCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl zh hidden"><h2 class="text-2xl font-black text-center text-pink-600 mb-6 uppercase">Khôi Phục Mật Khẩu</h2><form id="forgotForm" class="space-y-4"><div><input type="text" id="forgotUsername" placeholder="Tên đăng nhập" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"></div><div><input type="tel" id="forgotPhone" placeholder="Số điện thoại lúc đăng ký" pattern="[0-9]{10,11}" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"></div><div><div class="relative"><input type="password" id="forgotNewPassword" placeholder="Mật khẩu mới (>=6 ký tự, gồm chữ & số)" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"><button type="button" onclick="togglePassView('forgotNewPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded">Hiện</button></div></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg mt-4">XÁC NHẬN</button></form><p class="text-center text-xs mt-5"><button type="button" onclick="switchAuthView('login')" class="text-gray-500 font-bold hover:text-pink-600 hover:underline">Quay lại Đăng nhập</button></p></div>
+        <div id="setupProfileCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl hidden"><h2 class="text-2xl font-black text-center text-pink-600 mb-2">Bước Cuối Cùng!</h2><p class="text-xs text-center mb-6 font-bold text-gray-500">Tạo biệt danh (Nickname) để mọi người nhận ra bạn</p><form id="setupProfileForm" class="space-y-5"><div><input type="text" id="setupDisplayName" required minlength="2" placeholder="Tên hiển thị..." class="w-full p-4 rounded-xl border-2 border-pink-200 text-center font-black text-xl text-pink-600 outline-none focus:border-pink-400"></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg">VÀO CHAT</button></form></div>
     </div>
 
     <div id="appContainer" class="h-full hidden flex-col md:flex-row p-4 gap-4 max-w-7xl mx-auto z-20 relative pt-10">
         <div class="w-full md:w-[340px] flex flex-col gap-4">
-            <div class="glass p-5 rounded-[2rem] shadow-lg flex flex-col border border-pink-100">
-                <div class="flex justify-between group"><div class="flex space-x-4 cursor-pointer" onclick="openMyProfileModal()"><div class="w-14 h-14 bg-pink-400 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-inner">🌸</div><div><h3 id="meDisplayName" class="font-black text-pink-700 text-lg truncate w-32">Tên Bạn</h3><p id="meUsername" class="text-xs text-pink-500 font-bold truncate w-32">@username</p></div></div><button onclick="handleLogout()" class="w-10 h-10 bg-white/50 rounded-full text-red-500 font-black hover:bg-red-500 hover:text-white transition">⎋</button></div>
-                <div class="grid grid-cols-2 gap-2 mt-4">
-                    <button onclick="enterGameMode('ffa')" class="bg-purple-500 text-white font-black py-3 rounded-xl shadow-md hover:bg-purple-600 flex justify-center items-center gap-1 text-[11px] uppercase"><span>🎮</span> Tự Do</button>
-                    <button onclick="enterGameMode('zombie')" class="bg-green-600 text-white font-black py-3 rounded-xl shadow-md hover:bg-green-700 flex justify-center items-center gap-1 text-[11px] uppercase"><span>🧟</span> Sinh Tồn</button>
-                </div>
-                <div class="flex items-center justify-between mt-4 px-2 border-t border-pink-100 pt-3"><span class="text-[11px] font-black text-pink-600 uppercase">🤪 Chế độ Meme (Chat)</span><label class="relative inline-block w-10 mr-2 cursor-pointer"><input type="checkbox" id="memeToggle" class="tc absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="memeToggle" class="tl block h-5 rounded-full cursor-pointer"></label></label></div>
-            </div>
+            <div class="glass p-5 rounded-[2rem] shadow-lg flex flex-col border border-pink-100"><div class="flex justify-between group"><div class="flex space-x-4 cursor-pointer" onclick="openMyProfileModal()"><div class="w-14 h-14 bg-pink-400 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-inner">🌸</div><div><h3 id="meDisplayName" class="font-black text-pink-700 text-lg truncate w-32">Tên Bạn</h3><p id="meUsername" class="text-xs text-pink-500 font-bold truncate w-32">@username</p></div></div><button onclick="handleLogout()" class="w-10 h-10 bg-white/50 rounded-full text-red-500 font-black hover:bg-red-500 hover:text-white transition">⎋</button></div><div class="grid grid-cols-2 gap-2 mt-4"><button onclick="enterGameMode('ffa')" class="bg-purple-500 text-white font-black py-3 rounded-xl shadow-md hover:bg-purple-600 flex justify-center items-center gap-1 text-[11px] uppercase"><span>🎮</span> Bắn Tự Do</button><button onclick="enterGameMode('zombie')" class="bg-green-600 text-white font-black py-3 rounded-xl shadow-md hover:bg-green-700 flex justify-center items-center gap-1 text-[11px] uppercase"><span>🧟</span> Sinh Tồn</button></div><div class="flex items-center justify-between mt-4 px-2 border-t border-pink-100 pt-3"><span class="text-[11px] font-black text-pink-600 uppercase">🤪 Âm thanh Meme</span><label class="relative inline-block w-10 mr-2 cursor-pointer"><input type="checkbox" id="memeToggle" class="tc absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="memeToggle" class="tl block h-5 rounded-full cursor-pointer"></label></label></div></div>
             <div class="glass p-5 rounded-3xl shadow-lg flex-1 flex flex-col min-h-[300px]"><div class="flex space-x-2 mb-4"><input type="text" id="searchBar" placeholder="Tìm SĐT/Username..." class="w-full text-sm font-bold px-4 py-3 rounded-xl border-2 border-pink-200 outline-none focus:border-pink-400"><button onclick="triggerSearch()" class="bg-pink-500 text-white px-5 py-3 rounded-xl font-black">Tìm</button></div><div id="searchResultsArea" class="max-h-24 overflow-y-auto space-y-2 mb-3"></div><div class="mb-3"><h4 id="reqTitle" class="text-xs font-black text-pink-700 mb-2 border-b border-pink-100 pb-2">📩 Lời mời (0)</h4><div id="friendRequestsArea" class="space-y-2 max-h-24 overflow-y-auto"></div></div><div class="flex-1 flex flex-col"><div class="flex justify-between items-center mb-3 border-b border-pink-100 pb-2"><h4 class="text-xs font-black text-pink-700 uppercase">💬 Bạn bè</h4><select id="friendFilter" onchange="renderFriendsList()" class="text-xs bg-white border-2 border-pink-200 rounded-lg px-2 py-1 font-bold outline-none text-pink-700"><option value="active">Tất cả</option><option value="archived">Lưu trữ</option><option value="blocked">Đã chặn</option></select></div><div id="friendsListArea" class="space-y-2 overflow-y-auto flex-1 pr-1 pb-4"></div></div></div>
         </div>
         <div class="flex-1 glass rounded-[2rem] shadow-xl flex flex-col min-h-[500px] border border-pink-100 relative overflow-hidden">
@@ -103,83 +61,32 @@
         </div>
     </div>
 
-    <div id="gameContainer" class="h-full hidden flex-col p-2 md:p-4 max-w-5xl mx-auto z-20 relative pt-10">
-        <div class="glass p-3 md:p-4 rounded-t-2xl shadow-xl flex justify-between items-center mb-1 bg-gray-900 border-gray-700">
-            <div class="flex-1 hidden md:block"><h2 id="gameTitle" class="text-xl md:text-3xl font-black text-purple-400 uppercase drop-shadow">🎮 ARENA V10</h2><p class="text-[10px] md:text-xs text-gray-400 font-bold">Bản đồ Siêu Rộng - Chết là Hết!</p></div>
-            <div class="flex-1 text-center flex flex-col items-center justify-center"><p id="gameStatusText" class="text-xs md:text-sm font-black text-pink-500 uppercase mb-2"></p><button id="btnStartGame" onclick="clickStartGame()" class="hidden bg-green-500 text-white font-black px-6 md:px-10 py-2 md:py-3 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.6)] animate-pulse">BẮT ĐẦU NGAY</button></div>
-            <div class="flex-1 flex justify-end"><button onclick="leaveGameMode()" class="bg-red-500 text-white font-black px-4 md:px-6 py-2 md:py-3 rounded-xl hover:bg-red-600 transition shadow-md">THOÁT RA CHAT</button></div>
-        </div>
-
-        <div id="pkScoreBoard" class="hidden justify-between items-center bg-gray-900 border-b-4 border-gray-800 text-white p-3 md:p-4 px-4 md:px-8">
-            <div class="flex items-center gap-3 md:gap-6"><span id="p1Name" class="font-black text-red-400 text-base md:text-2xl truncate w-[100px]">P1</span><span id="p1Score" class="text-3xl md:text-5xl font-black text-white">0</span></div>
-            <div class="text-yellow-400 font-black text-base md:text-2xl tracking-widest text-center flex-1">VS <span class="block text-[9px] md:text-xs text-gray-400">ĐẠT 100 ĐIỂM SẼ THẮNG</span></div>
-            <div class="flex items-center gap-3 md:gap-6 flex-row-reverse"><span id="p2Name" class="font-black text-blue-400 text-base md:text-2xl truncate w-[100px] text-right">P2</span><span id="p2Score" class="text-3xl md:text-5xl font-black text-white">0</span></div>
-        </div>
-
+    <div id="gameContainer" class="h-full hidden flex-col p-2 md:p-4 w-full md:max-w-7xl mx-auto z-20 relative pt-10">
+        <div class="glass p-3 md:p-4 rounded-t-2xl shadow-xl flex justify-between items-center mb-1 bg-gray-900 border-gray-700"><div class="flex-1 hidden md:block"><h2 id="gameTitle" class="text-xl md:text-3xl font-black text-purple-400 uppercase drop-shadow">🎮 ARENA V11</h2><p class="text-[10px] md:text-xs text-gray-400 font-bold">Bản đồ Siêu Rộng - Chết là Hết!</p></div><div class="flex-1 text-center flex flex-col items-center justify-center"><p id="gameStatusText" class="text-xs md:text-sm font-black text-pink-500 uppercase mb-2"></p><button id="btnStartGame" onclick="clickStartGame()" class="hidden bg-green-500 text-white font-black px-6 md:px-10 py-2 md:py-3 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.6)] animate-pulse">BẮT ĐẦU NGAY</button></div><div class="flex-1 flex justify-end gap-2"><button onclick="toggleFullScreen()" class="bg-blue-600 text-white font-black px-3 py-2 md:py-3 rounded-xl hover:bg-blue-700 shadow-md flex items-center justify-center" title="Toàn Màn Hình">🔲</button><button onclick="leaveGameMode()" class="bg-red-500 text-white font-black px-4 md:px-6 py-2 md:py-3 rounded-xl hover:bg-red-600 transition shadow-md">THOÁT</button></div></div>
+        <div id="pkScoreBoard" class="hidden justify-between items-center bg-gray-900 border-b-4 border-gray-800 text-white p-3 md:p-4 px-4 md:px-8"><div class="flex items-center gap-3 md:gap-6"><span id="p1Name" class="font-black text-red-400 text-base md:text-2xl truncate w-[100px]">P1</span><span id="p1Score" class="text-3xl md:text-5xl font-black text-white">0</span></div><div class="text-yellow-400 font-black text-base md:text-2xl tracking-widest text-center flex-1">VS <span class="block text-[9px] md:text-xs text-gray-400">ĐẠT 100 ĐIỂM SẼ THẮNG</span></div><div class="flex items-center gap-3 md:gap-6 flex-row-reverse"><span id="p2Name" class="font-black text-blue-400 text-base md:text-2xl truncate w-[100px] text-right">P2</span><span id="p2Score" class="text-3xl md:text-5xl font-black text-white">0</span></div></div>
+        
         <div id="gameScreenArea" class="flex-1 bg-gray-950 rounded-b-2xl overflow-hidden relative flex items-center justify-center cursor-crosshair shadow-2xl touch-none select-none w-full border-2 border-gray-800">
             <canvas id="gameCanvas" width="800" height="500" class="w-full h-full object-cover block"></canvas>
-            
-            <div id="gameOverOverlay" class="absolute inset-0 bg-black/85 z-40 hidden flex-col items-center justify-center text-white backdrop-blur-sm transition-opacity duration-500">
-                <h2 class="text-6xl md:text-8xl font-black text-red-600 mb-2 animate-bounce drop-shadow-[0_0_25px_rgba(220,38,38,0.8)]">BẠN ĐÃ CHẾT</h2>
-                <p class="text-lg md:text-2xl mb-8 font-bold text-gray-300 uppercase tracking-widest">Hãy phục thù!</p>
-                <div class="bg-gray-900/50 border-2 border-yellow-500 p-6 rounded-2xl mb-8 text-center shadow-[0_0_15px_rgba(234,179,8,0.3)]">
-                    <p class="text-sm md:text-base text-yellow-500 font-bold mb-1 uppercase">Điểm số đạt được</p>
-                    <span id="finalScoreDisplay" class="text-yellow-400 font-black text-5xl md:text-6xl block">0</span>
-                </div>
-                <div class="flex gap-4">
-                    <button onclick="respawnGame()" class="bg-green-500 text-white font-black px-8 py-4 rounded-xl hover:bg-green-600 transition shadow-[0_0_20px_rgba(34,197,94,0.6)] text-xl">CHƠI LẠI</button>
-                    <button onclick="leaveGameMode()" class="bg-gray-600 text-white font-black px-8 py-4 rounded-xl hover:bg-gray-700 transition shadow-lg text-xl">THOÁT</button>
-                </div>
-            </div>
-
-            <div id="gameLeaderboardBox" class="hidden absolute top-4 right-4 bg-black/80 p-4 rounded-xl w-48 text-white pointer-events-none border border-gray-600 shadow-lg">
-                <h4 id="leaderboardTitle" class="text-xs font-black text-yellow-400 mb-2 border-b border-white/20 pb-1 uppercase">🏆 Bảng Xếp Hạng</h4>
-                <p class="text-[10px] text-gray-300 mb-2 font-bold">Điểm Của Bạn: <span id="myGameScoreDisplay" class="font-black text-green-400 text-sm">0</span></p>
-                <div id="gameLeaderboard" class="space-y-1.5 text-[11px] font-bold text-gray-200">Đang tải DB...</div>
-            </div>
-
-            <div id="mobileControls" class="absolute bottom-6 left-0 w-full px-6 flex justify-between items-end hidden z-30 pointer-events-none">
-                <div id="joystickZone" class="w-32 h-32 md:w-40 md:h-40 bg-white/10 border-2 border-white/20 rounded-full relative backdrop-blur-sm pointer-events-auto touch-none shadow-lg"><div id="joystickKnob" class="w-12 h-12 md:w-16 md:h-16 bg-white/80 rounded-full absolute top-10 left-10 md:top-12 md:left-12 shadow-[0_0_15px_rgba(255,255,255,0.5)] pointer-events-none"></div></div>
-                <button id="mobileShootBtn" class="w-24 h-24 md:w-32 md:h-32 bg-red-500/80 active:bg-red-600 rounded-full border-4 border-white/30 text-white font-black shadow-[0_0_20px_rgba(239,68,68,0.6)] backdrop-blur-sm pointer-events-auto touch-none select-none text-xl md:text-2xl">BẮN</button>
-            </div>
+            <div id="miniMapContainer" class="absolute top-4 left-4 w-28 h-28 md:w-36 md:h-36 z-20 pointer-events-none opacity-80 hidden"><canvas id="miniMapCanvas" width="150" height="150" class="w-full h-full rounded-full"></canvas></div>
+            <div id="gameLeaderboardBox" class="hidden absolute top-4 right-4 bg-black/80 p-4 rounded-xl w-48 text-white pointer-events-none border border-gray-600 shadow-lg z-20"><h4 id="leaderboardTitle" class="text-xs font-black text-yellow-400 mb-2 border-b border-white/20 pb-1 uppercase">🏆 Bảng Xếp Hạng</h4><p class="text-[10px] text-gray-300 mb-2 font-bold">Điểm Của Bạn: <span id="myGameScoreDisplay" class="font-black text-green-400 text-sm">0</span></p><div id="gameLeaderboard" class="space-y-1.5 text-[11px] font-bold text-gray-200">Đang tải DB...</div></div>
+            <div id="gameOverOverlay" class="absolute inset-0 bg-black/85 z-40 hidden flex-col items-center justify-center text-white backdrop-blur-sm transition-opacity duration-500"><h2 class="text-6xl md:text-8xl font-black text-red-600 mb-2 animate-bounce drop-shadow-[0_0_25px_rgba(220,38,38,0.8)]">BẠN ĐÃ CHẾT</h2><p class="text-lg md:text-2xl mb-8 font-bold text-gray-300 uppercase tracking-widest">Hãy phục thù!</p><div class="bg-gray-900/50 border-2 border-yellow-500 p-6 rounded-2xl mb-8 text-center shadow-[0_0_15px_rgba(234,179,8,0.3)]"><p class="text-sm md:text-base text-yellow-500 font-bold mb-1 uppercase">Điểm số đạt được</p><span id="finalScoreDisplay" class="text-yellow-400 font-black text-5xl md:text-6xl block">0</span></div><div class="flex gap-4"><button onclick="respawnGame()" class="bg-green-500 text-white font-black px-8 py-4 rounded-xl hover:bg-green-600 transition shadow-[0_0_20px_rgba(34,197,94,0.6)] text-xl">CHƠI LẠI</button><button onclick="leaveGameMode()" class="bg-gray-600 text-white font-black px-8 py-4 rounded-xl hover:bg-gray-700 transition shadow-lg text-xl">THOÁT</button></div></div>
+            <div id="mobileControls" class="absolute inset-0 w-full h-full z-30 pointer-events-none"><div id="joystickTouchZone" class="absolute top-0 left-0 w-1/2 h-full pointer-events-auto touch-none"></div><div id="joystickBase" class="absolute w-28 h-28 bg-white/20 border-2 border-white/40 rounded-full pointer-events-none transform -translate-x-1/2 -translate-y-1/2 backdrop-blur-sm"><div id="joystickKnob" class="absolute top-1/2 left-1/2 w-12 h-12 bg-white/90 rounded-full shadow-[0_0_15px_rgba(255,255,255,0.8)] transform -translate-x-1/2 -translate-y-1/2"></div></div><div class="absolute bottom-6 right-6 md:bottom-12 md:right-12 pointer-events-auto touch-none"><button id="mobileShootBtn" class="w-24 h-24 md:w-32 md:h-32 bg-red-500/80 active:bg-red-600 rounded-full border-4 border-white/30 text-white font-black shadow-[0_0_20px_rgba(239,68,68,0.6)] backdrop-blur-sm text-xl md:text-2xl">BẮN</button></div></div>
         </div>
     </div>
 
-    <div id="adminContainer" class="h-full hidden flex-col p-6 max-w-7xl mx-auto gap-5 z-20 relative mt-8">
-        <div class="glass p-6 rounded-[2rem] shadow-xl flex justify-between items-center">
-            <h1 class="text-3xl font-black text-red-600 uppercase">🛡️ Quản Trị Hệ Thống</h1>
-            <button onclick="handleLogout()" class="bg-red-100 text-red-600 font-black px-8 py-3 rounded-xl hover:bg-red-600 hover:text-white transition">ĐĂNG XUẤT</button>
-        </div>
-        <div class="glass rounded-[2rem] shadow-xl p-8 flex-1 overflow-auto">
-            <div class="flex space-x-2 mb-4 border-b border-pink-200 pb-2">
-                <button onclick="adminSetFilter('all')" id="adminTabAll" class="px-4 py-2 font-black text-pink-600 border-b-2 border-pink-600">Tất cả</button>
-                <button onclick="adminSetFilter('banned')" id="adminTabBanned" class="px-4 py-2 font-bold text-gray-500 hover:text-pink-600">Danh sách vi phạm</button>
-            </div>
-            <table class="w-full text-left border-collapse text-sm bg-white rounded-xl overflow-hidden shadow-sm">
-                <thead>
-                    <tr class="text-pink-700 font-black bg-pink-50">
-                        <th class="p-4 border-b">Tài khoản & Liên hệ</th>
-                        <th class="p-4 border-b">Thông tin (Đổi Tên/Pass)</th>
-                        <th class="p-4 border-b">Trạng thái (Ban/Mute)</th>
-                        <th class="p-4 border-b">Hành Động Xử Phạt</th>
-                    </tr>
-                </thead>
-                <tbody id="adminUsersTableBody" class="divide-y divide-pink-100"></tbody>
-            </table>
-        </div>
-    </div>
+    <div id="adminContainer" class="h-full hidden flex-col p-6 max-w-7xl mx-auto gap-5 z-20 relative mt-8"><div class="glass p-6 rounded-[2rem] shadow-xl flex justify-between items-center"><h1 class="text-3xl font-black text-red-600 uppercase">🛡️ Quản Trị Hệ Thống</h1><button onclick="handleLogout()" class="bg-red-100 text-red-600 font-black px-8 py-3 rounded-xl hover:bg-red-600 hover:text-white transition">ĐĂNG XUẤT</button></div><div class="glass rounded-[2rem] shadow-xl p-8 flex-1 overflow-auto"><div class="flex space-x-2 mb-4 border-b border-pink-200 pb-2"><button onclick="adminSetFilter('all')" id="adminTabAll" class="px-4 py-2 font-black text-pink-600 border-b-2 border-pink-600">Tất cả</button><button onclick="adminSetFilter('banned')" id="adminTabBanned" class="px-4 py-2 font-bold text-gray-500 hover:text-pink-600">Danh sách vi phạm</button></div><table class="w-full text-left border-collapse text-sm bg-white rounded-xl overflow-hidden shadow-sm"><thead><tr class="text-pink-700 font-black bg-pink-50"><th class="p-4 border-b">Tài khoản & Liên hệ</th><th class="p-4 border-b">Thông tin (Đổi Tên/Pass)</th><th class="p-4 border-b">Trạng thái (Ban/Mute)</th><th class="p-4 border-b">Hành Động Xử Phạt</th></tr></thead><tbody id="adminUsersTableBody" class="divide-y divide-pink-100"></tbody></table></div></div>
     
     <div id="admin2FAModal" class="fixed inset-0 bg-red-950/70 z-[100] hidden items-center justify-center backdrop-blur-md"><div class="glass p-10 rounded-[2rem] max-w-sm w-full mx-4 text-center"><h3 class="text-2xl font-black text-red-600 mb-6">XÁC MINH BẢO MẬT ADMIN</h3><input type="password" id="admin2FAPassword" class="w-full px-5 py-4 rounded-xl border-2 border-red-200 outline-none mb-6 text-center text-lg tracking-[0.2em] font-bold" placeholder="Nhập Mã PIN"><button onclick="verifyAdmin2FA()" class="w-full bg-red-600 text-white font-black py-4 rounded-xl shadow-lg">TRUY CẬP</button></div></div>
-    <div id="myProfileModal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center p-4"><div class="glass p-8 rounded-[2rem] max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto"><h3 class="text-2xl font-black text-pink-700 mb-6 text-center">HỒ SƠ CỦA BẠN</h3><div class="space-y-4 text-sm font-bold text-gray-700"><div><label>Nickname</label><input type="text" id="editProfileDisplayName" class="w-full p-3 border-2 rounded-xl outline-none focus:border-pink-400 mt-1"></div><div><label>Số điện thoại</label><input type="text" id="editProfilePhone" class="w-full p-3 border-2 rounded-xl outline-none focus:border-pink-400 mt-1"></div><div><label>Email liên hệ</label><input type="text" id="editProfileEmail" class="w-full p-3 border-2 rounded-xl outline-none focus:border-pink-400 mt-1"></div><div class="grid grid-cols-2 gap-4"><div><label>Giới tính</label><select id="editProfileGender" class="w-full p-3 border-2 rounded-xl outline-none mt-1"><option value="secret">Bí mật</option><option value="male">Nam</option><option value="female">Nữ</option></select></div><div><label>Ngày sinh</label><input type="date" id="editProfileDob" class="w-full p-3 border-2 rounded-xl outline-none mt-1"></div></div><div><label>Tiểu sử</label><textarea id="editProfileBio" rows="2" class="w-full p-3 border-2 rounded-xl resize-none outline-none mt-1"></textarea></div></div><div class="mt-8 flex space-x-4"><button onclick="document.getElementById('myProfileModal').classList.add('hidden')" class="flex-1 py-3.5 bg-gray-200 rounded-xl font-black">HỦY BỎ</button><button onclick="saveMyProfile()" class="flex-1 py-3.5 bg-pink-500 text-white rounded-xl font-black">LƯU HỒ SƠ</button></div><div class="mt-6 text-center border-t border-pink-100 pt-4"><button type="button" onclick="document.getElementById('myProfileModal').classList.add('hidden'); document.getElementById('changePassModal').classList.remove('hidden'); document.getElementById('changePassModal').classList.add('flex');" class="text-blue-500 font-bold hover:underline">🔑 Đổi mật khẩu</button></div></div></div>
-    <div id="changePassModal" class="fixed inset-0 bg-black/60 z-[80] hidden items-center justify-center p-4"><div class="glass p-8 rounded-[2rem] max-w-sm w-full shadow-2xl text-center"><h3 class="text-xl font-black text-pink-600 mb-6 uppercase">Đổi Mật Khẩu</h3><input type="password" id="oldPassInput" placeholder="Mật khẩu cũ" class="w-full p-3.5 mb-4 border-2 rounded-xl outline-none font-bold"><input type="password" id="newPassInput" placeholder="Mật khẩu mới" class="w-full p-3.5 mb-6 border-2 rounded-xl outline-none font-bold"><div class="flex space-x-3"><button type="button" onclick="document.getElementById('changePassModal').classList.add('hidden')" class="flex-1 py-3.5 bg-gray-200 rounded-xl font-black">Hủy</button><button type="button" onclick="submitChangePassInternal()" class="flex-1 py-3.5 bg-pink-500 text-white rounded-xl font-black">Đổi</button></div></div></div>
-    <div id="profileModal" class="fixed inset-0 bg-black/60 z-[80] hidden items-center justify-center p-4"><div class="glass p-8 rounded-[2rem] max-w-xs w-full shadow-2xl text-center relative overflow-hidden"><div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-pink-300 to-pink-500 z-0"></div><div class="w-24 h-24 bg-white text-pink-500 rounded-full flex items-center justify-center text-5xl font-bold mx-auto mb-3 mt-4 relative z-10 border-4 border-white shadow-lg">🌸</div><h3 id="profName" class="text-2xl font-black relative z-10 text-gray-800">Name</h3><p id="profRole" class="text-xs font-black text-pink-500 mb-4 bg-pink-100 inline-block px-3 py-1 rounded-full relative z-10">User</p><div class="text-left bg-gray-50 p-5 rounded-2xl text-sm font-medium space-y-3 mb-6 shadow-inner"><p class="text-gray-500">Giới tính: <span id="profGender" class="font-black text-gray-800"></span></p><p class="text-gray-500">Sinh nhật: <span id="profDob" class="font-black text-gray-800"></span></p><p class="border-t border-gray-200 pt-3 mt-2 text-gray-500">Bio: <span id="profBio" class="italic text-gray-700 font-bold"></span></p></div><button onclick="document.getElementById('profileModal').classList.add('hidden')" class="w-full bg-gray-200 py-3.5 rounded-xl font-black hover:bg-gray-300">ĐÓNG</button></div></div>
+    <div id="myProfileModal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center p-4"><div class="glass p-8 rounded-[2rem] max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto"><h3 class="text-2xl font-black text-pink-700 mb-6 text-center">HỒ SƠ CỦA BẠN</h3><div class="space-y-4 text-sm font-bold text-gray-700"><div><label>Nickname</label><input type="text" id="editProfileDisplayName" class="w-full p-3 border-2 rounded-xl outline-none mt-1"></div><div><label>Số điện thoại</label><input type="text" id="editProfilePhone" class="w-full p-3 border-2 rounded-xl outline-none mt-1"></div><div><label>Email liên hệ</label><input type="text" id="editProfileEmail" class="w-full p-3 border-2 rounded-xl outline-none mt-1"></div><div class="grid grid-cols-2 gap-4"><div><label>Giới tính</label><select id="editProfileGender" class="w-full p-3 border-2 rounded-xl outline-none mt-1"><option value="secret">Bí mật</option><option value="male">Nam</option><option value="female">Nữ</option></select></div><div><label>Ngày sinh</label><input type="date" id="editProfileDob" class="w-full p-3 border-2 rounded-xl outline-none mt-1"></div></div><div><label>Tiểu sử</label><textarea id="editProfileBio" rows="2" class="w-full p-3 border-2 rounded-xl resize-none outline-none mt-1"></textarea></div></div><div class="mt-8 flex space-x-4"><button onclick="document.getElementById('myProfileModal').classList.add('hidden')" class="flex-1 py-3.5 bg-gray-200 rounded-xl font-black">HỦY BỎ</button><button onclick="saveMyProfile()" class="flex-1 py-3.5 bg-pink-500 text-white rounded-xl font-black">LƯU HỒ SƠ</button></div><div class="mt-6 text-center border-t border-pink-100 pt-4"><button type="button" onclick="document.getElementById('myProfileModal').classList.add('hidden'); document.getElementById('changePassModal').classList.remove('hidden'); document.getElementById('changePassModal').classList.add('flex');" class="text-blue-500 font-bold hover:underline">🔑 Đổi mật khẩu</button></div></div></div>
+    <div id="changePassModal" class="fixed inset-0 bg-black/60 z-[80] hidden items-center justify-center p-4"><div class="glass p-8 rounded-[2rem] max-w-sm w-full shadow-2xl text-center"><h3 class="text-xl font-black text-pink-600 mb-6 uppercase">Đổi Mật Khẩu</h3><input type="password" id="oldPassInput" placeholder="Mật khẩu cũ" class="w-full p-3.5 mb-4 border-2 rounded-xl outline-none font-bold"><input type="password" id="newPassInput" placeholder="Mật khẩu mới (>=6 ký tự)" class="w-full p-3.5 mb-6 border-2 rounded-xl outline-none font-bold"><div class="flex space-x-3"><button type="button" onclick="document.getElementById('changePassModal').classList.add('hidden')" class="flex-1 py-3.5 bg-gray-200 rounded-xl font-black">Hủy</button><button type="button" onclick="submitChangePassInternal()" class="flex-1 py-3.5 bg-pink-500 text-white rounded-xl font-black">Đổi</button></div></div></div>
+    <div id="profileModal" class="fixed inset-0 bg-black/60 z-[80] hidden items-center justify-center p-4"><div class="glass p-8 rounded-[2rem] max-w-xs w-full shadow-2xl text-center relative overflow-hidden"><div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-pink-300 to-pink-500 z-0"></div><div class="w-24 h-24 bg-white text-pink-500 rounded-full flex justify-center items-center text-5xl font-bold mx-auto mb-3 mt-4 relative z-10 border-4 border-white shadow-lg">🌸</div><h3 id="profName" class="text-2xl font-black relative z-10 text-gray-800">Name</h3><p id="profRole" class="text-xs font-black text-pink-500 mb-4 bg-pink-100 inline-block px-3 py-1 rounded-full relative z-10">User</p><div class="text-left bg-gray-50 p-5 rounded-2xl text-sm font-medium space-y-3 mb-6 shadow-inner"><p class="text-gray-500">Giới tính: <span id="profGender" class="font-black text-gray-800"></span></p><p class="text-gray-500">Sinh nhật: <span id="profDob" class="font-black text-gray-800"></span></p><p class="border-t border-gray-200 pt-3 mt-2 text-gray-500">Bio: <span id="profBio" class="italic text-gray-700 font-bold"></span></p></div><button onclick="document.getElementById('profileModal').classList.add('hidden')" class="w-full bg-gray-200 py-3.5 rounded-xl font-black">ĐÓNG</button></div></div>
     <div id="adminChatModal" class="fixed inset-0 bg-black/70 z-[90] hidden items-center justify-center backdrop-blur-md"><div class="glass w-full max-w-lg rounded-[2rem] shadow-2xl flex flex-col h-[550px] m-4 bg-white/95"><div class="px-8 py-5 border-b-2 border-pink-200 flex justify-between items-center"><h3 id="adminChatTitle" class="font-black text-pink-700 text-xl">Kênh Hỗ Trợ</h3><button onclick="closeAdminChat()" class="text-gray-400 font-black text-2xl hover:text-red-500">✕</button></div><div id="adminChatMessages" class="flex-1 p-6 overflow-y-auto space-y-4 bg-gray-50/50"></div><form id="adminChatForm" class="p-5 border-t-2 border-pink-200 flex gap-3"><input type="text" id="adminChatInput" class="flex-1 px-5 py-3.5 rounded-xl border-2 outline-none" placeholder="Nhập phản hồi..."><button type="submit" class="bg-pink-500 text-white px-8 py-3.5 rounded-xl font-black">GỬI</button></form></div></div>
+
     <script>
         const socket = io({ autoConnect: false }); 
         let currentUser = null, activeChatUserId = null, editingMsgId = null, currentAdminChatUserId = null;
         let globalDataStore = { friends: [], messages: [], requests: [], blocks: [], archives: [], isMuted: false };
         
-        // --- 1. ÂM THANH & THÔNG BÁO ---
         const notifSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_79eff4e14f.mp3');
         const memeUrls = ['https://www.myinstants.com/media/sounds/vine-boom.mp3', 'https://www.myinstants.com/media/sounds/quack_5.mp3', 'https://www.myinstants.com/media/sounds/boing_1.mp3'];
         const memeSounds = memeUrls.map(u => new Audio(u));
@@ -188,7 +95,6 @@
         function sendPushNotif(title, bodyText) { try { if ("Notification" in window && Notification.permission === "granted" && document.hidden) { navigator.serviceWorker?.ready.then(r => r.showNotification(title, { body: bodyText, icon: '🌸' })) || new Notification(title, { body: bodyText }); } } catch(e) {} }
         function playSound() { const memeToggle = document.getElementById('memeToggle'); if (memeToggle && memeToggle.checked) { const s = memeSounds[Math.floor(Math.random() * memeSounds.length)]; s.currentTime = 0; s.play().catch(()=>{}); } else { notifSound.currentTime = 0; notifSound.play().catch(()=>{}); } }
 
-        // --- 2. TIỆN ÍCH UI ---
         function openLightbox(src) { document.getElementById('lightboxImg').src = src; const lb = document.getElementById('imageLightbox'); lb.classList.remove('hidden'); lb.classList.add('flex'); setTimeout(() => { lb.classList.remove('opacity-0'); document.getElementById('lightboxImg').classList.remove('scale-95'); }, 10); }
         function closeLightbox() { const lb = document.getElementById('imageLightbox'); lb.classList.add('opacity-0'); document.getElementById('lightboxImg').classList.add('scale-95'); setTimeout(() => { lb.classList.add('hidden'); lb.classList.remove('flex'); }, 300); }
         let alertCallback = null; 
@@ -208,19 +114,19 @@
             else { banInterval = setInterval(() => { const dist = new Date(banUntil).getTime() - new Date().getTime(); if (dist < 0) { clearInterval(banInterval); location.reload(); } else { const d = Math.floor(dist / (1000 * 60 * 60 * 24)), h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)), m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60)), s = Math.floor((dist % (1000 * 60)) / 1000); document.getElementById('bannedTimeDisplay').innerText = `Mở khóa sau: ${d} ngày ${h} giờ ${m} phút ${s} giây`; } }, 1000); }
         }
 
-        // --- 3. QUẢN LÝ ĐĂNG NHẬP ---
         window.addEventListener('DOMContentLoaded', async () => { 
-            setTimeout(() => { const l = document.getElementById('globalLoading'); if(l && !l.classList.contains('hidden')) l.classList.add('hidden'); }, 2000);
-            const savedKey = localStorage.getItem('cherrySavedLoginKey'); if (savedKey) { document.getElementById('loginKey').value = savedKey; document.getElementById('rememberMe').checked = true; }
-            showLoading(true); 
-            try { const r = await fetch('/api/me'); const d = await r.json(); if (r.ok) initAppSession(d); else if (r.status === 403 && d.isBanned) { showLoading(false); triggerBannedScreen(d.banUntil); } else { switchAuthView('login'); showLoading(false); } } 
-            catch (e) { switchAuthView('login'); showLoading(false); } 
+            showLoading(true);
+            try { 
+                const savedKey = localStorage.getItem('cherrySavedLoginKey'); if (savedKey) { document.getElementById('loginKey').value = savedKey; document.getElementById('rememberMe').checked = true; }
+                const r = await fetch('/api/me'); const d = await r.json(); 
+                if (r.ok) initAppSession(d); else if (r.status === 403 && d.isBanned) { triggerBannedScreen(d.banUntil); } else { switchAuthView('login'); } 
+            } catch (e) { switchAuthView('login'); } finally { showLoading(false); }
         });
 
-        document.getElementById('loginForm').addEventListener('submit', async (e) => { e.preventDefault(); showLoading(true); const loginKeyVal = document.getElementById('loginKey').value; if (document.getElementById('rememberMe').checked) localStorage.setItem('cherrySavedLoginKey', loginKeyVal); else localStorage.removeItem('cherrySavedLoginKey'); const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loginKey: loginKeyVal, password: document.getElementById('loginPassword').value }) }); const d = await r.json(); showLoading(false); if(r.ok) { if(d.needProfile) switchAuthView('setupProfile'); else if (d.step === "banned") triggerBannedScreen(d.banUntil); else initAppSession(await(await fetch('/api/me')).json()); } else showCustomAlert(d.msg, "Đăng nhập thất bại"); });
-        document.getElementById('registerForm').addEventListener('submit', async (e) => { e.preventDefault(); showLoading(true); const r = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('regUsername').value, phone: document.getElementById('regPhone').value, password: document.getElementById('regPassword').value, confirmPassword: document.getElementById('regConfirmPassword').value }) }); const d = await r.json(); showLoading(false); if (r.ok) switchAuthView('setupProfile'); else showCustomAlert(d.msg, "Đăng ký thất bại"); });
-        document.getElementById('forgotForm').addEventListener('submit', async (e) => { e.preventDefault(); showLoading(true); const r = await fetch('/api/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('forgotUsername').value, phone: document.getElementById('forgotPhone').value, newPassword: document.getElementById('forgotNewPassword').value }) }); const d = await r.json(); showLoading(false); showCustomAlert(d.msg, "Khôi phục tài khoản"); if(r.ok) { document.getElementById('forgotForm').reset(); switchAuthView('login'); }});
-        document.getElementById('setupProfileForm').addEventListener('submit', async (e) => { e.preventDefault(); showLoading(true); const r = await fetch('/api/setup-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayName: document.getElementById('setupDisplayName').value }) }); showLoading(false); if(r.ok) initAppSession(await(await fetch('/api/me')).json()); else showCustomAlert("Lỗi cập nhật tên!"); });
+        document.getElementById('loginForm').addEventListener('submit', async (e) => { e.preventDefault(); showLoading(true); try { const loginKeyVal = document.getElementById('loginKey').value; if (document.getElementById('rememberMe').checked) localStorage.setItem('cherrySavedLoginKey', loginKeyVal); else localStorage.removeItem('cherrySavedLoginKey'); const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loginKey: loginKeyVal, password: document.getElementById('loginPassword').value }) }); const d = await r.json(); if(r.ok) { if(d.needProfile) switchAuthView('setupProfile'); else if (d.step === "banned") triggerBannedScreen(d.banUntil); else { const usrReq = await fetch('/api/me'); initAppSession(await usrReq.json()); } } else showCustomAlert(d.msg, "Đăng nhập thất bại"); } catch(e){} finally { showLoading(false); } });
+        document.getElementById('registerForm').addEventListener('submit', async (e) => { e.preventDefault(); showLoading(true); try { const r = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('regUsername').value, phone: document.getElementById('regPhone').value, password: document.getElementById('regPassword').value, confirmPassword: document.getElementById('regConfirmPassword').value }) }); const d = await r.json(); if (r.ok) switchAuthView('setupProfile'); else showCustomAlert(d.msg, "Đăng ký thất bại"); } catch(e){} finally { showLoading(false); } });
+        document.getElementById('forgotForm').addEventListener('submit', async (e) => { e.preventDefault(); showLoading(true); try { const r = await fetch('/api/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('forgotUsername').value, phone: document.getElementById('forgotPhone').value, newPassword: document.getElementById('forgotNewPassword').value }) }); const d = await r.json(); showCustomAlert(d.msg, "Khôi phục tài khoản"); if(r.ok) { document.getElementById('forgotForm').reset(); switchAuthView('login'); } } catch(e){} finally { showLoading(false); } });
+        document.getElementById('setupProfileForm').addEventListener('submit', async (e) => { e.preventDefault(); showLoading(true); try { const r = await fetch('/api/setup-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayName: document.getElementById('setupDisplayName').value }) }); if(r.ok) { const usrReq = await fetch('/api/me'); initAppSession(await usrReq.json()); } else showCustomAlert("Lỗi cập nhật tên!"); } catch(e){} finally { showLoading(false); } });
         async function handleLogout() { await fetch('/api/logout', { method: 'POST' }); location.reload(); }
 
         function initAppSession(u) { 
@@ -231,7 +137,6 @@
             else { document.getElementById('appContainer').classList.remove('hidden'); document.getElementById('appContainer').classList.add('flex'); document.getElementById('meDisplayName').innerText = u.displayName; document.getElementById('meUsername').innerText = '@' + u.username; socket.emit('initData'); } 
         }
 
-        // --- 4. LOGIC CHAT & TƯƠNG TÁC ---
         socket.on('actionError', (msg) => showCustomAlert(msg, "Lỗi")); socket.on('actionSuccess', (msg) => showCustomAlert(msg, "Hệ thống")); socket.on('forceBannedUI', (d) => triggerBannedScreen(d.banUntil)); socket.on('unbanned', () => location.reload()); socket.on('forceLogout', (r) => showCustomAlert(r, "Hệ Thống", () => location.reload()));
         socket.on('userDataPackage', (d) => { globalDataStore = d; renderFriendRequests(); renderFriendsList(); if(activeChatUserId) { renderMessages(); updateChatHeader(); } });
         socket.on('newFriendRequest', (r) => { playSound(); sendPushNotif("Kết bạn mới", `${r.fromName} vừa gửi lời mời`); triggerPopup("Lời mời kết bạn", r.fromName); });
@@ -287,8 +192,7 @@
         function saveMyProfile() { const d = { displayName:document.getElementById('editProfileDisplayName').value.trim(), phone:document.getElementById('editProfilePhone').value.trim(), email:document.getElementById('editProfileEmail').value.trim(), gender:document.getElementById('editProfileGender').value, dob:document.getElementById('editProfileDob').value, bio:document.getElementById('editProfileBio').value.trim() }; if(!d.displayName || !d.phone) return showCustomAlert("Không được bỏ trống tên hiển thị và SĐT!"); socket.emit('updateMyProfile', d, (res) => { showCustomAlert(res.msg); if(res.success){ document.getElementById('myProfileModal').classList.add('hidden'); currentUser.displayName = d.displayName; document.getElementById('meDisplayName').innerText = d.displayName; } }); }
         function submitChangePassInternal() { const o = document.getElementById('oldPassInput').value, n = document.getElementById('newPassInput').value; if(!o || !n) return; socket.emit('changePasswordInternal', {oldPass: o, newPass: n}, (res) => { showCustomAlert(res.msg); if(res.success) { document.getElementById('changePassModal').classList.add('hidden'); document.getElementById('oldPassInput').value = ''; document.getElementById('newPassInput').value = ''; }}); }
 
-
-        // --- 5. BẢNG ADMIN (ĐÃ KHÔI PHỤC FULL CHỨC NĂNG SỬA TÊN/PASS) ---
+        // ADMIN CHỨC NĂNG
         function verifyAdmin2FA() { const p = document.getElementById('admin2FAPassword').value; if(!p) return; socket.emit('verifyAdminAuth', p, (res) => { if (res.success) { document.getElementById('admin2FAModal').classList.add('hidden'); document.getElementById('adminContainer').classList.remove('hidden'); document.getElementById('adminContainer').classList.add('flex'); socket.emit('initData'); socket.emit('adminGetUsers'); } else { showCustomAlert(res.msg, "Lỗi mã PIN"); } }); }
         let admFil = 'all'; function adminSetFilter(f) { admFil = f; if(f === 'all') { document.getElementById('adminTabAll').className = "px-4 py-2 font-black text-pink-600 border-b-2 border-pink-600"; document.getElementById('adminTabBanned').className = "px-4 py-2 font-bold text-gray-500 hover:text-pink-600"; } else { document.getElementById('adminTabBanned').className = "px-4 py-2 font-black text-pink-600 border-b-2 border-pink-600"; document.getElementById('adminTabAll').className = "px-4 py-2 font-bold text-gray-500 hover:text-pink-600"; } socket.emit('adminGetUsers'); }
         socket.on('adminUsersList', (us) => { 
@@ -297,26 +201,14 @@
                 const st = u.isOnline ? '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-black text-[10px]">ON</span>' : '<span class="bg-gray-100 text-gray-500 px-3 py-1 rounded-full font-bold text-[10px]">OFF</span>'; 
                 let w = '<span class="text-green-500 font-bold text-[11px] ml-2">✅ Bình thường</span>'; if(u.isBanned) w = `<span class="text-red-500 font-black ml-2 text-[11px] bg-red-50 px-2 py-1 rounded">🔒 KHÓA (${u.banUntil ? new Date(u.banUntil).toLocaleTimeString() : 'V.Viễn'})</span>`; else if(u.isMuted) w = `<span class="text-orange-500 font-black ml-2 text-[11px] bg-orange-50 px-2 py-1 rounded">🔇 CẤM (${u.muteUntil ? new Date(u.muteUntil).toLocaleTimeString() : 'V.Viễn'})</span>`; 
                 const contactInfo = `<div class="font-black text-gray-800">@${u.username}</div><div class="text-[10px] text-gray-500 font-bold mt-1">📞 SĐT: <span class="text-blue-600">${u.phone||'Trống'}</span></div>`;
-                
-                const editUI = u.role === 'admin' ? `<span class="font-black text-pink-700">${u.displayName || u.username}</span>` : 
-                    `<div class="flex flex-col gap-1 w-40">
-                        <input type="text" id="admDisp-${u.id}" value="${u.displayName||''}" placeholder="Tên hiển thị..." class="border border-gray-300 rounded px-2 py-1 text-xs outline-none focus:border-pink-500">
-                        <input type="password" id="admPass-${u.id}" placeholder="Đổi mật khẩu mới..." class="border border-gray-300 rounded px-2 py-1 text-xs outline-none focus:border-red-500">
-                        <button onclick="adminEditUser('${u.id}')" class="bg-blue-500 text-white text-[10px] font-black px-2 py-1 rounded hover:bg-blue-600 transition shadow-sm mt-1">Lưu Thông Tin</button>
-                    </div>`;
-
+                const editUI = u.role === 'admin' ? `<span class="font-black text-pink-700">${u.displayName || u.username}</span>` : `<div class="flex flex-col gap-1 w-40"><input type="text" id="admDisp-${u.id}" value="${u.displayName||''}" placeholder="Tên hiển thị..." class="border border-gray-300 rounded px-2 py-1 text-xs outline-none focus:border-pink-500"><input type="password" id="admPass-${u.id}" placeholder="Đổi mật khẩu mới..." class="border border-gray-300 rounded px-2 py-1 text-xs outline-none focus:border-red-500"><button onclick="adminEditUser('${u.id}')" class="bg-blue-500 text-white text-[10px] font-black px-2 py-1 rounded hover:bg-blue-600 transition shadow-sm mt-1">Lưu Thông Tin</button></div>`;
                 const act = u.role === 'admin' ? '<span class="text-xs font-black text-gray-400 bg-gray-100 px-2 py-1.5 rounded-lg">🛡️ ADMIN</span>' : `<div class="flex flex-col gap-2"><button onclick="openAdminChat('${u.id}', '${u.displayName||u.username}')" class="bg-purple-500 text-white px-2 py-1.5 rounded-lg font-bold shadow hover:bg-purple-600 text-xs transition text-center">💬 Chat Hỗ Trợ</button><select onchange="handleAdminPunish('${u.id}', this.value); this.value='';" class="bg-white border-2 border-red-200 text-red-600 font-black rounded-lg px-2 py-1 text-xs outline-none cursor-pointer hover:border-red-500 transition"><option value="">Phạt...</option><option value="mute">🔇 Cấm nhắn</option><option value="ban">🚫 Khóa Acc</option><option value="unpunish" class="text-green-600">✅ Xóa phạt</option></select></div>`; 
                 b.innerHTML += `<tr class="border-b border-pink-50 hover:bg-white transition"><td class="p-4 align-top">${contactInfo}</td><td class="p-4 align-top">${editUI}</td><td class="p-4 whitespace-nowrap align-top">${st} <br> ${w}</td><td class="p-4 whitespace-nowrap align-top">${act}</td></tr>`; 
             }); 
         });
 
-        function adminEditUser(id) {
-            const newName = document.getElementById(`admDisp-${id}`).value.trim();
-            const newPass = document.getElementById(`admPass-${id}`).value.trim();
-            socket.emit('adminEditUser', { id: id, displayName: newName, newPassword: newPass });
-        }
-
-        function handleAdminPunish(id, act) { if(!act) return; if (act === 'unpunish') { if(confirm('Chắc chắn xóa bỏ án phạt?')) socket.emit('adminPunishUser', { targetId:id, action:'unpunish' }, () => socket.emit('adminGetUsers')); return; } const min = prompt('Nhập số phút phạt (VD: 15, 60, 1440). Nhập chữ "infinite" để phạt vĩnh viễn:','15'); if(min) { const dur = min.toLowerCase() === 'infinite' ? 'infinite' : parseInt(min); if(dur) socket.emit('adminPunishUser', { targetId:id, action:act, durationMinutes:dur }, () => { showCustomAlert("Xử phạt thành công!"); socket.emit('adminGetUsers'); }); } }
+        function adminEditUser(id) { const newName = document.getElementById(`admDisp-${id}`).value.trim(); const newPass = document.getElementById(`admPass-${id}`).value.trim(); socket.emit('adminEditUser', { id: id, displayName: newName, newPassword: newPass }); }
+        function handleAdminPunish(id, act) { if(!act) return; if (act === 'unpunish') { if(confirm('Chắc chắn xóa bỏ án phạt?')) socket.emit('adminPunishUser', { targetId:id, action:'unpunish' }, () => socket.emit('adminGetUsers')); return; } const min = prompt('Nhập số phút phạt (VD: 15, 60). Nhập "infinite" để phạt vĩnh viễn:','15'); if(min) { const dur = min.toLowerCase() === 'infinite' ? 'infinite' : parseInt(min); if(dur) socket.emit('adminPunishUser', { targetId:id, action:act, durationMinutes:dur }, () => { showCustomAlert("Xử phạt thành công!"); socket.emit('adminGetUsers'); }); } }
         function openAdminChat(id, name) { currentAdminChatUserId = id; document.getElementById('adminChatTitle').innerText = 'Kênh hỗ trợ: ' + name; document.getElementById('adminChatModal').classList.remove('hidden'); document.getElementById('adminChatModal').classList.add('flex'); socket.emit('adminGetChat', id); }
         function closeAdminChat() { document.getElementById('adminChatModal').classList.add('hidden'); document.getElementById('adminChatModal').classList.remove('flex'); currentAdminChatUserId = null; }
         socket.on('adminChatData', (msgs) => { const a = document.getElementById('adminChatMessages'); a.innerHTML = ''; msgs.forEach(m => appendAdminMessage(m)); a.scrollTop = a.scrollHeight; });
@@ -324,39 +216,57 @@
         document.getElementById('adminChatForm').addEventListener('submit', (e) => { e.preventDefault(); const i = document.getElementById('adminChatInput'); if(!i.value.trim() || !currentAdminChatUserId) return; socket.emit('sendMessage', { toUserId: currentAdminChatUserId, text: i.value.trim() }); i.value = ''; });
 
 
-        // =======================================================================
-        // --- 6. GAME ENGINE V10 TỐI THƯỢNG (CAMERA BÁM, CHẾT LÀ HẾT) ---
-        // =======================================================================
+        // GAME ENGINE V11
         let gameMode = null, currentPKRoomId = null, isPlaying = false, gameLoopReq = null;
         let keys = { w: false, a: false, s: false, d: false };
         let aimAngle = 0, isShooting = false;
         let latestGameState = null;
         
         const gcvs = document.getElementById('gameCanvas'), gctx = gcvs.getContext('2d');
-        const SCREEN_W = 800, SCREEN_H = 500; // Khung Canvas hiển thị
-        const MAP_W = 3000, MAP_H = 3000; // Map Server thực tế
-        let camX = 0, camY = 0; // Tọa độ Camera
+        const mapCvs = document.getElementById('miniMapCanvas'), mapCtx = mapCvs.getContext('2d');
+        const container = document.getElementById('gameScreenArea');
+        let SCREEN_W = 800, SCREEN_H = 500; 
+        const MAP_W = 3000, MAP_H = 3000;
+        let camX = 0, camY = 0; 
         const isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(()=>{}); } 
+            else { if (document.exitFullscreen) document.exitFullscreen(); }
+        }
+
+        function resizeCanvas() {
+            if(isPlaying) {
+                SCREEN_W = container.clientWidth;
+                SCREEN_H = container.clientHeight;
+                gcvs.width = SCREEN_W;
+                gcvs.height = SCREEN_H;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
 
         function resetGameVars() {
             isPlaying = false; currentPKRoomId = null; gameMode = null;
             keys = { w:false, a:false, s:false, d:false }; isShooting = false; latestGameState = null;
             if(gameLoopReq) { cancelAnimationFrame(gameLoopReq); gameLoopReq = null; }
-            const jKnob = document.getElementById('joystickKnob'); if(jKnob) jKnob.style.transform = `translate(0px, 0px)`;
             document.getElementById('gameOverOverlay').classList.add('hidden'); document.getElementById('gameOverOverlay').classList.remove('flex');
+            const jBase = document.getElementById('joystickBase');
+            if(jBase) { jBase.style.opacity = 0; jBase.style.pointerEvents = 'none'; }
         }
 
-        window.addEventListener('blur', () => { keys = { w:false, a:false, s:false, d:false }; isShooting = false; const jKnob = document.getElementById('joystickKnob'); if(jKnob) jKnob.style.transform = `translate(0px, 0px)`; });
+        window.addEventListener('blur', () => { keys = { w:false, a:false, s:false, d:false }; isShooting = false; });
 
         function toggleGameUI(show) {
             if(show) {
                 document.getElementById('appContainer').classList.add('hidden'); document.getElementById('appContainer').classList.remove('flex');
                 document.getElementById('gameContainer').classList.remove('hidden'); document.getElementById('gameContainer').classList.add('flex');
-                if(isTouchDevice) document.getElementById('mobileControls').classList.remove('hidden');
+                setTimeout(() => { resizeCanvas(); }, 100); 
+                if(isTouchDevice) { document.getElementById('mobileControls').classList.add('active'); document.getElementById('miniMapContainer').classList.remove('hidden'); }
             } else {
                 document.getElementById('gameContainer').classList.add('hidden'); document.getElementById('gameContainer').classList.remove('flex');
                 document.getElementById('appContainer').classList.remove('hidden'); document.getElementById('appContainer').classList.add('flex');
-                document.getElementById('mobileControls').classList.add('hidden');
+                document.getElementById('mobileControls').classList.remove('active'); document.getElementById('miniMapContainer').classList.add('hidden');
+                if (document.fullscreenElement) document.exitFullscreen();
             }
         }
 
@@ -380,48 +290,30 @@
             socket.emit('respawnGame', gameMode); isPlaying = true;
         }
 
-        // --- CƠ CHẾ CAMERA ---
         function updateCamera(myP) {
-            camX = myP.x - SCREEN_W / 2;
-            camY = myP.y - SCREEN_H / 2;
-            if (camX < 0) camX = 0;
-            if (camY < 0) camY = 0;
+            camX = myP.x - SCREEN_W / 2; camY = myP.y - SCREEN_H / 2;
+            if (camX < 0) camX = 0; if (camY < 0) camY = 0;
             if (camX > MAP_W - SCREEN_W) camX = MAP_W - SCREEN_W;
             if (camY > MAP_H - SCREEN_H) camY = MAP_H - SCREEN_H;
         }
 
-        // --- PK MODE LOGIC ---
+        // PK MODE
         function invitePK() { if(!activeChatUserId) return; socket.emit('invitePK', activeChatUserId); showCustomAlert("Đã gửi lời thách đấu. Chờ đối thủ chấp nhận..."); }
         let pendingInviter = null;
         socket.on('pkInviteReceived', (data) => { pendingInviter = data.fromId; document.getElementById('pkChallengerName').innerText = data.fromName; const modal = document.getElementById('pkInviteModal'); modal.classList.remove('hidden'); modal.classList.add('flex'); setTimeout(() => document.getElementById('pkInviteBox').classList.replace('scale-95', 'scale-100'), 10); });
         function respondPK(accept) { const modal = document.getElementById('pkInviteModal'); document.getElementById('pkInviteBox').classList.replace('scale-100', 'scale-95'); setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300); if(accept) socket.emit('acceptPK', pendingInviter); else socket.emit('declinePK', pendingInviter); pendingInviter = null; }
-        
-        socket.on('pkRoomJoined', (roomData) => {
-            resetGameVars(); gameMode = 'pk'; currentPKRoomId = roomData.id;
-            document.getElementById('gameTitle').innerText = "⚔️ THÁCH ĐẤU 1 VS 1"; document.getElementById('gameStatusText').innerText = "CHỜ BẮT ĐẦU";
-            document.getElementById('btnStartGame').classList.remove('hidden'); document.getElementById('btnStartGame').innerText = "BẮT ĐẦU NGAY";
-            document.getElementById('pkScoreBoard').classList.remove('hidden'); document.getElementById('pkScoreBoard').classList.add('flex');
-            document.getElementById('gameLeaderboardBox').classList.add('hidden');
-            toggleGameUI(true); updatePKUI(roomData);
-        });
-
+        socket.on('pkRoomJoined', (roomData) => { resetGameVars(); gameMode = 'pk'; currentPKRoomId = roomData.id; document.getElementById('gameTitle').innerText = "⚔️ THÁCH ĐẤU 1 VS 1"; document.getElementById('gameStatusText').innerText = "CHỜ BẮT ĐẦU"; document.getElementById('btnStartGame').classList.remove('hidden'); document.getElementById('btnStartGame').innerText = "BẮT ĐẦU NGAY"; document.getElementById('pkScoreBoard').classList.remove('hidden'); document.getElementById('pkScoreBoard').classList.add('flex'); document.getElementById('gameLeaderboardBox').classList.add('hidden'); toggleGameUI(true); updatePKUI(roomData); });
         function clickStartGame() { if(gameMode === 'pk' && currentPKRoomId) socket.emit('startPK', currentPKRoomId); }
         socket.on('pkGameStarted', () => { isPlaying = true; document.getElementById('gameStatusText').innerText = "ĐANG CHIẾN ĐẤU!"; document.getElementById('btnStartGame').classList.add('hidden'); if(!gameLoopReq) startGameLoop(); });
         socket.on('pkGameOver', (data) => { isPlaying = false; keys={w:false,a:false,s:false,d:false}; document.getElementById('gameStatusText').innerText = `${data.winnerName} ĐÃ CHIẾN THẮNG!`; document.getElementById('btnStartGame').classList.remove('hidden'); document.getElementById('btnStartGame').innerText = "CHƠI LẠI (CẦN 2 NGƯỜI)"; });
         socket.on('pkRoomClosed', () => { showCustomAlert("Phòng Game đã đóng."); leaveGameMode(); });
+        function updatePKUI(roomData) { const players = Object.values(roomData.players); if(players.length > 0) { document.getElementById('p1Name').innerText = players[0].name; document.getElementById('p1Score').innerText = players[0].score; } if(players.length > 1) { document.getElementById('p2Name').innerText = players[1].name; document.getElementById('p2Score').innerText = players[1].score; } else { document.getElementById('p2Name').innerText = "Chờ đối thủ..."; document.getElementById('p2Score').innerText = "0"; } }
 
-        function updatePKUI(roomData) {
-            const players = Object.values(roomData.players);
-            if(players.length > 0) { document.getElementById('p1Name').innerText = players[0].name; document.getElementById('p1Score').innerText = players[0].score; }
-            if(players.length > 1) { document.getElementById('p2Name').innerText = players[1].name; document.getElementById('p2Score').innerText = players[1].score; } else { document.getElementById('p2Name').innerText = "Chờ đối thủ..."; document.getElementById('p2Score').innerText = "0"; }
-        }
-
-        // --- CẬP NHẬT GÓI TIN GAME TỔNG HỢP V10 (CÓ CAMERA) ---
         socket.on('gameStateUpdate', (data) => {
             if(gameMode !== data.mode) return;
             latestGameState = data.state;
             const myP = latestGameState.players[socket.id];
-            if(myP && myP.hp > 0) updateCamera(myP); // Cập nhật Camera theo người chơi
+            if(myP && myP.hp > 0) updateCamera(myP); 
             
             gctx.clearRect(0,0,SCREEN_W,SCREEN_H);
             drawGrid(); 
@@ -432,52 +324,42 @@
             
             if(data.mode === 'ffa' || data.mode === 'zombie') {
                 if(myP) document.getElementById('myGameScoreDisplay').innerText = myP.score; 
+                if(isTouchDevice) drawMiniMap(latestGameState);
             } else if (data.mode === 'pk') {
                 updatePKUI(latestGameState);
             }
         });
 
-        // Xử lý sự kiện CHẾT LÀ HẾT
         socket.on('playerDied', (data) => {
             if(gameMode !== data.mode) return;
             isPlaying = false; keys = { w:false, a:false, s:false, d:false }; isShooting = false;
             document.getElementById('finalScoreDisplay').innerText = data.score;
             document.getElementById('gameOverOverlay').classList.remove('hidden');
             document.getElementById('gameOverOverlay').classList.add('flex');
-            const jKnob = document.getElementById('joystickKnob'); if(jKnob) jKnob.style.transform = `translate(0px, 0px)`;
+            
+            const jBase = document.getElementById('joystickBase');
+            if(jBase) { jBase.style.opacity = 0; jBase.style.pointerEvents = 'none'; }
         });
 
-        // Bảng Xếp Hạng Update 5p
         socket.on('leaderboardUpdate', (lb) => {
-            let html = '';
-            if(!lb || lb.length === 0) html = 'Chưa có ai';
-            else lb.slice(0, 10).forEach(x => { html += `<div class="flex justify-between border-b border-white/10 pb-1"><span>${x.name} <span class="text-[9px] text-gray-400">(${x.mode})</span></span><span class="text-green-400">${x.score}</span></div>`; });
+            let html = ''; if(!lb || lb.length === 0) html = 'Chưa có ai'; else lb.slice(0, 10).forEach(x => { html += `<div class="flex justify-between border-b border-white/10 pb-1"><span>${x.name} <span class="text-[9px] text-gray-400">(${x.mode})</span></span><span class="text-green-400">${x.score}</span></div>`; });
             document.getElementById('gameLeaderboard').innerHTML = html;
         });
-        
-        socket.on('dailyWinnerNotice', (winner) => {
-            if(winner) {
-                document.getElementById('dailyWinnerBanner').classList.remove('hidden');
-                document.getElementById('dwName').innerText = winner.name; document.getElementById('dwScore').innerText = winner.score; document.getElementById('dwMode').innerText = winner.mode;
-            }
-        });
+        socket.on('dailyWinnerNotice', (winner) => { if(winner) { document.getElementById('dailyWinnerBanner').classList.remove('hidden'); document.getElementById('dwName').innerText = winner.name; document.getElementById('dwScore').innerText = winner.score; document.getElementById('dwMode').innerText = winner.mode; } });
 
-        // --- VẼ CANVAS CÓ OFFSET (camX, camY) ---
+        // VẼ CANVAS GAME
         function drawGrid() {
             gctx.strokeStyle = 'rgba(255,255,255,0.05)'; gctx.lineWidth=1;
             const startX = -(camX % 40); const startY = -(camY % 40);
             for(let i=startX; i<SCREEN_W; i+=40) { gctx.beginPath(); gctx.moveTo(i,0); gctx.lineTo(i,SCREEN_H); gctx.stroke(); } 
             for(let i=startY; i<SCREEN_H; i+=40) { gctx.beginPath(); gctx.moveTo(0,i); gctx.lineTo(SCREEN_W,i); gctx.stroke(); }
-            
-            // Vẽ viền Map (Boundary)
-            gctx.strokeStyle = 'rgba(255,0,0,0.5)'; gctx.lineWidth=4;
-            gctx.strokeRect(-camX, -camY, MAP_W, MAP_H);
+            gctx.strokeStyle = 'rgba(255,0,0,0.5)'; gctx.lineWidth=4; gctx.strokeRect(-camX, -camY, MAP_W, MAP_H);
         }
 
         function drawZombies(zombies) {
             if(!zombies) return;
             zombies.forEach(z => {
-                if(z.x < camX-50 || z.x > camX+SCREEN_W+50 || z.y < camY-50 || z.y > camY+SCREEN_H+50) return; // Không vẽ ngoài tầm nhìn
+                if(z.x < camX-50 || z.x > camX+SCREEN_W+50 || z.y < camY-50 || z.y > camY+SCREEN_H+50) return; 
                 const dx = z.x - camX, dy = z.y - camY;
                 gctx.beginPath(); gctx.arc(dx, dy, 20, 0, Math.PI*2); gctx.fillStyle = '#166534'; gctx.fill(); 
                 gctx.lineWidth = 3; gctx.strokeStyle = '#4ade80'; gctx.stroke();
@@ -492,10 +374,8 @@
                 const dx = p.x - camX, dy = p.y - camY;
                 gctx.beginPath(); gctx.arc(dx, dy, 22, 0, Math.PI*2); gctx.fillStyle = p.color; gctx.fill(); 
                 gctx.lineWidth = 3; gctx.strokeStyle = 'rgba(255,255,255,0.9)'; gctx.stroke();
-                
                 gctx.fillStyle = '#fff'; gctx.beginPath(); gctx.arc(dx-8, dy-5, 4, 0, Math.PI*2); gctx.arc(dx+8, dy-5, 4, 0, Math.PI*2); gctx.fill();
                 gctx.fillStyle = 'white'; gctx.font = 'bold 12px Arial'; gctx.textAlign = 'center'; gctx.fillText(p.name, dx, dy-32);
-                
                 gctx.fillStyle = 'red'; gctx.fillRect(dx-20, dy+30, 40, 5); gctx.fillStyle = '#22c55e'; gctx.fillRect(dx-20, dy+30, 40*(p.hp/100), 5);
             });
         }
@@ -519,7 +399,27 @@
             }); gctx.shadowBlur = 0;
         }
 
-        // --- ĐIỀU KHIỂN BẰNG BÀN PHÍM/CHUỘT ---
+        function drawMiniMap(state) {
+            mapCtx.clearRect(0,0,150,150);
+            mapCtx.fillStyle = 'rgba(0,0,0,0.5)'; mapCtx.fillRect(0,0,150,150);
+            const scale = 150 / MAP_W;
+            
+            if(state.zombies) {
+                mapCtx.fillStyle = '#4ade80';
+                state.zombies.forEach(z => { mapCtx.fillRect(z.x * scale - 1.5, z.y * scale - 1.5, 3, 3); });
+            }
+            if(state.players) {
+                Object.values(state.players).forEach(p => {
+                    if (p.hp <= 0) return;
+                    mapCtx.fillStyle = p.id === socket.id ? '#3b82f6' : '#ef4444';
+                    mapCtx.fillRect(p.x * scale - 2, p.y * scale - 2, 4, 4);
+                });
+            }
+            mapCtx.strokeStyle = 'rgba(255,255,255,0.4)'; mapCtx.lineWidth = 1;
+            mapCtx.strokeRect(camX * scale, camY * scale, SCREEN_W * scale, SCREEN_H * scale);
+        }
+
+        // ĐIỀU KHIỂN
         window.addEventListener('keydown', (e) => { if(isPlaying && ['w','a','s','d'].includes(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; }); 
         window.addEventListener('keyup', (e) => { if(isPlaying && ['w','a','s','d'].includes(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
         
@@ -528,7 +428,6 @@
             const r = gcvs.getBoundingClientRect(); const myP = latestGameState.players[socket.id];
             if(myP && myP.hp > 0) {
                 const scaleX = SCREEN_W / r.width; const scaleY = SCREEN_H / r.height;
-                // Chuột click trên màn hình -> Chuyển về tọa độ Map thực tế
                 const mouseX_Map = (e.clientX - r.left) * scaleX + camX; 
                 const mouseY_Map = (e.clientY - r.top) * scaleY + camY;
                 aimAngle = Math.atan2(mouseY_Map - myP.y, mouseX_Map - myP.x);
@@ -538,19 +437,67 @@
         gcvs.addEventListener('mouseup', () => { isShooting = false; });
         gcvs.addEventListener('mouseleave', () => { isShooting = false; }); 
 
-        // --- JOYSTICK MOBILE ---
-        const jZone = document.getElementById('joystickZone'), jKnob = document.getElementById('joystickKnob'), sBtn = document.getElementById('mobileShootBtn');
-        let jTouchId = null; const resetJoystick = () => { jTouchId = null; jKnob.style.transform = `translate(0px, 0px)`; keys = {w:false, a:false, s:false, d:false}; };
-        jZone.addEventListener('touchstart', (e) => { e.preventDefault(); if(!isPlaying) return; jTouchId = e.changedTouches[0].identifier; handleJoystickMove(e.changedTouches[0]); }, {passive: false});
-        jZone.addEventListener('touchmove', (e) => { e.preventDefault(); if(!isPlaying) return; for(let i=0; i<e.changedTouches.length; i++) { if(e.changedTouches[i].identifier === jTouchId) handleJoystickMove(e.changedTouches[i]); } }, {passive: false});
-        jZone.addEventListener('touchend', (e) => { e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) { if(e.changedTouches[i].identifier === jTouchId) resetJoystick(); } }, {passive: false});
-        jZone.addEventListener('touchcancel', (e) => { e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) { if(e.changedTouches[i].identifier === jTouchId) resetJoystick(); } }, {passive: false});
+        // JOYSTICK DYNAMIC MOBILE
+        const jTouchZone = document.getElementById('joystickTouchZone');
+        const jBase = document.getElementById('joystickBase');
+        const jKnob = document.getElementById('joystickKnob');
+        const sBtn = document.getElementById('mobileShootBtn');
+        let jTouchId = null;
+        let jCenterX = 0, jCenterY = 0;
 
-        function handleJoystickMove(touch) {
-            const rect = jZone.getBoundingClientRect(); const centerX = rect.left + rect.width/2; const centerY = rect.top + rect.height/2;
-            let dx = touch.clientX - centerX; let dy = touch.clientY - centerY; const maxDist = rect.width/2 - 10; const dist = Math.hypot(dx, dy);
+        jTouchZone.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if(!isPlaying) return;
+            const touch = e.changedTouches[0];
+            jTouchId = touch.identifier;
+            
+            const rect = jTouchZone.getBoundingClientRect();
+            jCenterX = touch.clientX - rect.left;
+            jCenterY = touch.clientY - rect.top;
+            
+            jBase.style.left = jCenterX + 'px';
+            jBase.style.top = jCenterY + 'px';
+            jBase.style.opacity = 1;
+            jBase.style.pointerEvents = 'auto';
+            
+            handleDynamicJoystick(touch, rect);
+        }, {passive: false});
+
+        jTouchZone.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if(!isPlaying) return;
+            const rect = jTouchZone.getBoundingClientRect();
+            for(let i=0; i<e.changedTouches.length; i++) {
+                if(e.changedTouches[i].identifier === jTouchId) handleDynamicJoystick(e.changedTouches[i], rect);
+            }
+        }, {passive: false});
+
+        const releaseJoystick = (e) => {
+            e.preventDefault();
+            for(let i=0; i<e.changedTouches.length; i++) {
+                if(e.changedTouches[i].identifier === jTouchId) {
+                    jTouchId = null;
+                    jBase.style.opacity = 0;
+                    jBase.style.pointerEvents = 'none';
+                    jKnob.style.transform = `translate(-50%, -50%)`;
+                    keys = {w:false, a:false, s:false, d:false};
+                }
+            }
+        };
+
+        jTouchZone.addEventListener('touchend', releaseJoystick, {passive: false});
+        jTouchZone.addEventListener('touchcancel', releaseJoystick, {passive: false});
+
+        function handleDynamicJoystick(touch, rect) {
+            let dx = (touch.clientX - rect.left) - jCenterX;
+            let dy = (touch.clientY - rect.top) - jCenterY;
+            const maxDist = 35; 
+            const dist = Math.hypot(dx, dy);
+            
             if(dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
-            jKnob.style.transform = `translate(${dx}px, ${dy}px)`; keys = { w: dy < -15, s: dy > 15, a: dx < -15, d: dx > 15 };
+            
+            jKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            keys = { w: dy < -10, s: dy > 10, a: dx < -10, d: dx > 10 };
         }
 
         const autoAimLogic = () => {
@@ -570,7 +517,6 @@
             gameLoopReq = requestAnimationFrame(startGameLoop);
         }
 
-        // --- 7. HOA SAKURA RƠI NỀN ---
         const cvs = document.getElementById('sakuraCanvas'); const cx = cvs.getContext('2d'); 
         window.addEventListener('resize', () => { cvs.width = window.innerWidth; cvs.height = window.innerHeight; }); cvs.width = window.innerWidth; cvs.height = window.innerHeight;
         let p = []; for(let i=0; i<50; i++) p.push({ x:Math.random()*cvs.width, y:Math.random()*cvs.height-cvs.height, w:8+Math.random()*6, h:12+Math.random()*8, d:1+Math.random()*1.5, hs:-1+Math.random()*2, r:Math.random()*Math.PI*2, rs:.01+Math.random()*.03, f:Math.random()*Math.PI, fs:.02+Math.random()*.04, o:.6+Math.random()*.4 });
