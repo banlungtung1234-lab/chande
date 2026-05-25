@@ -10,6 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
+        
         /* CSS V1-V15 Kế thừa */
         body { background: linear-gradient(135deg, #ffe3ec 0%, #ffb3c6 50%, #ff8fa3 100%); background-size: 400% 400%; animation: gradientBG 15s ease infinite; overflow-x: hidden; touch-action: none; overscroll-behavior: none; }
         @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
@@ -18,7 +19,7 @@
         .glass:hover { box-shadow: 0 12px 40px 0 rgba(255, 105, 180, 0.25); }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255, 182, 193, 0.8); border-radius: 10px; }
         .tc:checked { right: 0; border-color: #ec4899; } .tc:checked + .tl { background-color: #ec4899; } .tc { right: 4px; z-index: 1; border-color: #e5e7eb; transition: all 0.3s; } .tl { width: 2.5rem; height: 1.25rem; background-color: #e5e7eb; border-radius: 9999px; transition: all 0.3s; }
-        #mobileControls { display: none; } @media (max-width: 900px) { #mobileControls.active { display: block; } #landscapeOverlay { display: flex; } @media (orientation: landscape) { #landscapeOverlay { display: none !important; } } }
+        #mobileControls { display: none; } @media (max-width: 900px) { #mobileControls.active { display: block; } } #landscapeOverlay { display: none !important; } @media (max-width: 900px) and (orientation: portrait) { body.in-game #landscapeOverlay { display: flex !important; } }
         #joystickBase { transition: opacity 0.15s; opacity: 0; } #joystickKnob { transition: transform 0.05s linear; } 
         #miniMapContainer { border: 2px solid rgba(255,255,255,0.7); border-radius: 50%; overflow: hidden; background: rgba(0,0,0,0.6); box-shadow: 0 0 15px rgba(0,0,0,0.8); }
         .msg-actions { display: none; position: absolute; top: -15px; right: 0; background: white; padding: 2px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10; gap: 5px; }
@@ -549,9 +550,11 @@
         
         function toggleGameUI(show) { 
             if(show) { 
+                document.body.classList.add('in-game'); // Bật công tắc báo hiệu đã vào game
                 document.getElementById('appContainer').classList.add('hidden'); document.getElementById('appContainer').classList.remove('flex'); document.getElementById('gameContainer').classList.remove('hidden'); document.getElementById('gameContainer').classList.add('flex'); setTimeout(() => { resizeCanvas(); }, 100); document.getElementById('miniMapContainer').classList.remove('hidden'); if(isTouchDevice) { document.getElementById('mobileControls').classList.add('active'); } 
                 document.getElementById('ingameClassDisplay').innerText = currentUser.playerClass==='sniper'?'Xạ thủ':(currentUser.playerClass==='tanker'?'Đỡ đòn':'Cứu thương');
             } else { 
+                document.body.classList.remove('in-game'); // Tắt công tắc khi thoát game
                 document.getElementById('gameContainer').classList.add('hidden'); document.getElementById('gameContainer').classList.remove('flex'); document.getElementById('appContainer').classList.remove('hidden'); document.getElementById('appContainer').classList.add('flex'); document.getElementById('mobileControls').classList.remove('active'); document.getElementById('miniMapContainer').classList.add('hidden'); if (document.fullscreenElement) document.exitFullscreen(); 
                 closeMobileChat();
             } 
