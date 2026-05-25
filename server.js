@@ -21,7 +21,7 @@ function initDatabase() {
         const adminPasswordHash = bcrypt.hashSync('admin123@', 10);
         writeDB({
             users: [{
-                id: "admin-id", username: "admin", phone: "0123456789", email: "admin@gmail.com",
+                id: "admin-id", username: "admin", phone: "0931910999", email: "admin@gmail.com",
                 password: adminPasswordHash, displayName: "Hệ Thống Admin", role: "admin",
                 isBanned: false, banUntil: null, isMuted: false, muteUntil: null, 
                 friends: [], blocks: [], archives: [],
@@ -72,7 +72,7 @@ app.post('/api/register', (req, res) => {
     const { username, phone, email, password, confirmPassword } = req.body;
     
     if (!username || username.trim().length < 4) return res.status(400).json({ msg: "Tên đăng nhập phải từ 4 ký tự trở lên!" });
-    if (!phone || !/^[0-9]{10,11}$/.test(phone)) return res.status(400).json({ msg: "Số điện thoại không hợp lệ (yêu cầu 10-11 số)!" });
+    if (!phone || !/^[0-9]{10,11}$/.test(phone)) return res.status(400).json({ msg: "Số điện thoại không hợp lệ!" });
     if (!password || password.length < 6 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(password)) {
         return res.status(400).json({ msg: "Mật khẩu quá yếu! Yêu cầu >= 6 ký tự, bao gồm cả chữ và số." });
     }
@@ -96,7 +96,7 @@ app.post('/api/register', (req, res) => {
 app.post('/api/forgot-password', (req, res) => {
     const { username, phone, newPassword } = req.body; 
     if (!newPassword || newPassword.length < 6 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(newPassword)) {
-        return res.status(400).json({ msg: "Mật khẩu mới quá yếu! Yêu cầu >= 6 ký tự, bao gồm cả chữ và số." });
+        return res.status(400).json({ msg: "Mật khẩu mới quá yếu!" });
     }
     const db = readDB();
     const user = db.users.find(u => u.username === username && u.phone === phone);
@@ -224,7 +224,7 @@ io.on('connection', (socket) => {
             if (targetUser) {
                 if(data.displayName) targetUser.displayName = data.displayName;
                 if(data.newPassword) {
-                    if(data.newPassword.length < 6) return socket.emit('actionError', "Mật khẩu phải >= 6 ký tự!");
+                    if(data.newPassword.length < 6) return socket.emit('actionError', "Mật khẩu phải trên 6 ký tự!");
                     targetUser.password = bcrypt.hashSync(data.newPassword, 10);
                 }
                 writeDB(db); socket.emit('actionSuccess', "Cập nhật thành công!");
