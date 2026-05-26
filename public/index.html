@@ -571,7 +571,7 @@
             const jBase = document.getElementById('joystickBase'); 
             if(jBase) { jBase.style.opacity = 0; jBase.style.pointerEvents = 'none'; } 
 
-            const deathSound = new Audio('https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3');
+            const deathSound = new Audio('https://www.myinstants.com/media/sounds/cat-laugh-meme.mp3');
             deathSound.volume = 0.8;
             deathSound.play().catch(()=>{});
         });
@@ -696,11 +696,11 @@
             } else { lowHpOverlay.classList.add('hidden'); }
         }, 500);
 
-        const bgm = new Audio('https://cdn.pixabay.com/audio/2022/01/18/audio_d0a13f69d2.mp3'); bgm.loop = true; bgm.volume = 0.4;
+        const bgm = new Audio(''); bgm.loop = true; bgm.volume = 0.4;
         const ob = new MutationObserver(() => { if (document.body.classList.contains('in-game')) { bgm.play().catch(()=>{}); } else { bgm.pause(); bgm.currentTime = 0; } });
         ob.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-        document.getElementById('gameScreenArea').addEventListener('mousedown', () => { if(isPlaying) { const pew = new Audio('https://www.myinstants.com/media/sounds/pew_1.mp3'); pew.volume = 0.2; pew.play().catch(()=>{}); } });
+        document.getElementById('gameScreenArea').addEventListener('mousedown', () => { if(isPlaying) { const pew = new Audio('https://www.myinstants.com/media/sounds/gunshots-mixed.mp3'); pew.volume = 0.2; pew.play().catch(()=>{}); } });
 
         let afkTimer; const resetAfk = () => { document.body.style.opacity = '1'; clearTimeout(afkTimer); afkTimer = setTimeout(() => { if(!isPlaying) document.body.style.opacity = '0.4'; }, 60000); };
         window.addEventListener('mousemove', resetAfk); window.addEventListener('keydown', resetAfk); window.addEventListener('touchstart', resetAfk);
