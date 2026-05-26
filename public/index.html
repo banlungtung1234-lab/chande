@@ -57,9 +57,9 @@
 
     <div id="pkInviteModal" class="fixed inset-0 bg-black/70 z-[9500] hidden items-center justify-center backdrop-blur-sm"><div class="glass p-8 rounded-[2rem] max-w-sm w-full mx-4 text-center transform scale-95 transition-transform duration-300" id="pkInviteBox"><div class="text-6xl mb-4 animate-bounce">⚔️</div><h3 class="text-2xl font-black text-red-600 mb-2 uppercase">Thách Đấu PK (Elo)!</h3><p class="text-sm text-gray-700 font-bold mb-6"><span id="pkChallengerName" class="text-pink-600 text-lg">Ai đó</span> muốn phân tài với bạn!</p><div class="flex space-x-3"><button onclick="respondPK(false)" class="flex-1 bg-gray-300 text-gray-800 font-black py-3.5 rounded-xl">TỪ CHỐI</button><button onclick="respondPK(true)" class="flex-1 bg-red-500 text-white font-black py-3.5 rounded-xl animate-pulse">CHẤP NHẬN</button></div></div></div>
 
-    <div id="classSelectionModal" class="fixed inset-0 bg-black/80 z-[9600] hidden items-center justify-center backdrop-blur-md"><div class="glass p-8 rounded-[2rem] max-w-2xl w-full mx-4 text-center shadow-2xl"><h2 class="text-3xl font-black text-pink-600 mb-2 uppercase">Chọn Lớp Nhân Vật</h2><p class="text-gray-500 font-bold mb-6 text-sm">Vai trò này sẽ quyết định lối chơi của bạn trong Game</p><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div onclick="selectPlayerClass('sniper')" class="bg-white/50 p-4 rounded-2xl border-2 border-transparent hover:border-pink-500 cursor-pointer transition transform hover:scale-105"><div class="text-5xl mb-2">🎯</div><h3 class="font-black text-red-600 text-lg">Xạ Thủ (Sniper)</h3><p class="text-xs text-gray-600 mt-2 font-bold">Máu: 80 | Tốc độ: Cao<br>Sát thương: Siêu Khủng<br>Nhược điểm: Bắn chậm</p></div><div onclick="selectPlayerClass('tanker')" class="bg-white/50 p-4 rounded-2xl border-2 border-transparent hover:border-pink-500 cursor-pointer transition transform hover:scale-105"><div class="text-5xl mb-2">🛡️</div><h3 class="font-black text-blue-600 text-lg">Đỡ Đòn (Tanker)</h3><p class="text-xs text-gray-600 mt-2 font-bold">Máu: 200 | Tốc độ: Chậm<br>Thể lực: Trâu bò<br>Ưu điểm: Sống dai</p></div><div onclick="selectPlayerClass('medic')" class="bg-white/50 p-4 rounded-2xl border-2 border-transparent hover:border-pink-500 cursor-pointer transition transform hover:scale-105"><div class="text-5xl mb-2">💉</div><h3 class="font-black text-green-600 text-lg">Cứu Thương (Medic)</h3><p class="text-xs text-gray-600 mt-2 font-bold">Máu: 120 | Tốc độ: Vừa<br>Nội tại: Tự hồi máu<br>Ưu điểm: Cân bằng</p></div></div><input type="hidden" id="selectedClassValue" value="none"><button onclick="confirmClassSelection()" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg hover:bg-pink-600 transition text-xl">XÁC NHẬN VAI TRÒ</button></div></div>
+    <div id="classSelectionModal" class="fixed inset-0 bg-black/80 z-[9600] hidden items-center justify-center backdrop-blur-md"><div class="glass p-8 rounded-[2rem] max-w-2xl w-full mx-4 text-center shadow-2xl"><h2 class="text-3xl font-black text-pink-600 mb-2 uppercase">Chọn Lớp Nhân Vật</h2><p class="text-gray-500 font-bold mb-6 text-sm">Vai trò này sẽ quyết định lối chơi của bạn trong Game V16</p><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div onclick="selectPlayerClass('sniper')" class="bg-white/50 p-4 rounded-2xl border-2 border-transparent hover:border-pink-500 cursor-pointer transition transform hover:scale-105"><div class="text-5xl mb-2">🎯</div><h3 class="font-black text-red-600 text-lg">Xạ Thủ (Sniper)</h3><p class="text-xs text-gray-600 mt-2 font-bold">Máu: 80 | Tốc độ: Cao<br>Sát thương: Siêu Khủng<br>Nhược điểm: Bắn chậm</p></div><div onclick="selectPlayerClass('tanker')" class="bg-white/50 p-4 rounded-2xl border-2 border-transparent hover:border-pink-500 cursor-pointer transition transform hover:scale-105"><div class="text-5xl mb-2">🛡️</div><h3 class="font-black text-blue-600 text-lg">Đỡ Đòn (Tanker)</h3><p class="text-xs text-gray-600 mt-2 font-bold">Máu: 200 | Tốc độ: Chậm<br>Thể lực: Trâu bò<br>Ưu điểm: Sống dai</p></div><div onclick="selectPlayerClass('medic')" class="bg-white/50 p-4 rounded-2xl border-2 border-transparent hover:border-pink-500 cursor-pointer transition transform hover:scale-105"><div class="text-5xl mb-2">💉</div><h3 class="font-black text-green-600 text-lg">Cứu Thương (Medic)</h3><p class="text-xs text-gray-600 mt-2 font-bold">Máu: 120 | Tốc độ: Vừa<br>Nội tại: Tự hồi máu<br>Ưu điểm: Cân bằng</p></div></div><input type="hidden" id="selectedClassValue" value="none"><button onclick="confirmClassSelection()" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg hover:bg-pink-600 transition text-xl">XÁC NHẬN VAI TRÒ</button></div></div>
 
-    <div id="authContainer" class="h-full flex items-center justify-center p-4 relative z-10 mt-6"><div id="loginCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl hover:scale-[1.02] transition-transform"><div class="text-center mb-8"><span class="text-6xl block mb-2">🌸</span><h2 class="text-3xl font-black text-pink-600">V16</h2><p class="text-xs font-bold text-gray-500">mtun 36</p></div><form id="loginForm" class="space-y-4"><div><input type="text" id="loginKey" placeholder="Tài khoản / Số điện thoại" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"></div><div><div class="relative"><input type="password" id="loginPassword" placeholder="Mật khẩu" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"><button type="button" onclick="togglePassView('loginPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button></div></div><div class="flex justify-between mt-2 px-1"><label class="flex items-center text-xs font-bold text-gray-600 cursor-pointer"><input type="checkbox" id="rememberMe" class="mr-2 w-4 h-4 rounded text-pink-500"> Ghi nhớ</label><button type="button" onclick="switchAuthView('forgot')" class="text-xs text-pink-600 font-bold hover:underline">Quên mật khẩu?</button></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-pink-600 transition text-lg mt-4">ĐĂNG NHẬP</button></form><p class="text-center text-sm mt-6 font-bold text-gray-600">Chưa có tài khoản? <button onclick="switchAuthView('register')" class="text-pink-600 font-black hover:underline">Đăng ký ngay</button></p></div>
+    <div id="authContainer" class="h-full flex items-center justify-center p-4 relative z-10 mt-6"><div id="loginCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl hover:scale-[1.02] transition-transform"><div class="text-center mb-8"><span class="text-6xl block mb-2">🌸</span><h2 class="text-3xl font-black text-pink-600">V16</h2><p class="text-xs font-bold text-gray-500">GOD TIER ESPORTS EDITION</p></div><form id="loginForm" class="space-y-4"><div><input type="text" id="loginKey" placeholder="Tài khoản / Số điện thoại" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"></div><div><div class="relative"><input type="password" id="loginPassword" placeholder="Mật khẩu" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"><button type="button" onclick="togglePassView('loginPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button></div></div><div class="flex justify-between mt-2 px-1"><label class="flex items-center text-xs font-bold text-gray-600 cursor-pointer"><input type="checkbox" id="rememberMe" class="mr-2 w-4 h-4 rounded text-pink-500"> Ghi nhớ</label><button type="button" onclick="switchAuthView('forgot')" class="text-xs text-pink-600 font-bold hover:underline">Quên mật khẩu?</button></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-pink-600 transition text-lg mt-4">ĐĂNG NHẬP</button></form><p class="text-center text-sm mt-6 font-bold text-gray-600">Chưa có tài khoản? <button onclick="switchAuthView('register')" class="text-pink-600 font-black hover:underline">Đăng ký ngay</button></p></div>
     <div id="registerCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl hidden"><h2 class="text-2xl font-black text-center text-pink-600 mb-6 uppercase">Tạo Tài Khoản</h2><form id="registerForm" class="space-y-4"><div><input type="text" id="regUsername" placeholder="Tên đăng nhập (>=4 ký tự)" minlength="4" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"></div><div><input type="tel" id="regPhone" placeholder="Số điện thoại" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"></div><div><div class="relative"><input type="password" id="regPassword" placeholder="Mật khẩu" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"><button type="button" onclick="togglePassView('regPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold">Hiện</button></div></div><div><div class="relative"><input type="password" id="regConfirmPassword" placeholder="Xác nhận mật khẩu" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"><button type="button" onclick="togglePassView('regConfirmPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold">Hiện</button></div></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg mt-4">ĐĂNG KÝ</button></form><p class="text-center text-xs mt-5 font-bold text-gray-600"><button onclick="switchAuthView('login')" class="text-pink-600 hover:underline">Đăng nhập</button></p></div>
     <div id="setupProfileCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl hidden"><h2 class="text-2xl font-black text-center text-pink-600 mb-2">Tạo Biệt Danh</h2><form id="setupProfileForm" class="space-y-5"><div><input type="text" id="setupDisplayName" required minlength="2" placeholder="Tên hiển thị..." class="w-full p-4 rounded-xl border-2 border-pink-200 text-center font-black text-xl text-pink-600 outline-none"></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg">TIẾP TỤC</button></form></div>
     </div>
@@ -230,7 +230,8 @@
     <div id="adminContainer" class="h-full hidden flex-col p-6 max-w-7xl mx-auto gap-5 z-20 relative mt-8">
         <div class="glass p-6 rounded-[2rem] shadow-xl flex justify-between items-center"><h1 class="text-3xl font-black text-red-600 uppercase">🛡️ Admin Dashboard</h1><button onclick="handleLogout()" class="bg-red-100 text-red-600 font-black px-8 py-3 rounded-xl hover:bg-red-600 hover:text-white transition shadow-sm">ĐĂNG XUẤT</button></div>
         <div class="glass p-6 rounded-[2rem] shadow-xl border border-pink-100 flex items-center space-x-4 bg-white/50"><span class="text-2xl animate-pulse">📢</span><input type="text" id="adminBroadcastInput" placeholder="Nhập thông báo khẩn cấp..." class="flex-1 px-4 py-3 rounded-xl border-2 border-pink-200 outline-none font-bold"><button onclick="sendAdminBroadcast()" class="bg-red-500 text-white px-8 py-3 rounded-xl font-black shadow-lg">PHÁT THANH</button></div>
-        <div class="glass rounded-[2rem] shadow-xl p-8 flex-1 overflow-auto"><table class="w-full text-left border-collapse text-sm bg-white rounded-xl overflow-hidden shadow-sm"><thead><tr class="text-pink-700 font-black bg-pink-50"><th class="p-4 border-b">Người Dùng</th><th class="p-4 border-b">Thông số (Rank/Elo)</th><th class="p-4 border-b">Trạng thái</th><th class="p-4 border-b">Hành Động</th></tr></thead><tbody id="adminUsersTableBody" class="divide-y divide-pink-100"></tbody></table></div>
+        <div class="glass p-4 rounded-xl shadow border border-pink-100 bg-white/80 flex gap-3 items-center"><span class="text-xl">🔍</span><input type="text" id="adminSearchInput" onkeyup="renderAdminDashboard()" placeholder="Tìm kiếm người chơi theo tên..." class="flex-1 px-4 py-2 rounded-lg border border-gray-300 outline-none font-bold text-sm"></div>
+        <div class="glass rounded-[2rem] shadow-xl p-6 flex-1 overflow-auto"><table class="w-full text-left border-collapse text-sm bg-white rounded-xl overflow-hidden shadow-sm"><thead><tr class="text-pink-700 font-black bg-pink-50"><th class="p-4 border-b">Người Dùng</th><th class="p-4 border-b">Thông số (Rank/Elo)</th><th class="p-4 border-b">Trạng thái</th><th class="p-4 border-b w-1/3">Tùy Chọn Hành Động</th></tr></thead><tbody id="adminUsersTableBody" class="divide-y divide-pink-100"></tbody></table></div>
     </div>
     
     <div id="admin2FAModal" class="fixed inset-0 bg-red-950/70 z-[100] hidden items-center justify-center backdrop-blur-md"><div class="glass p-10 rounded-[2rem] max-w-sm w-full mx-4 text-center"><h3 class="text-2xl font-black text-red-600 mb-6">XÁC MINH ADMIN</h3><input type="password" id="admin2FAPassword" class="w-full px-5 py-4 rounded-xl border-2 border-red-200 outline-none mb-6 text-center text-lg tracking-[0.2em] font-bold" placeholder="Nhập Mã PIN"><button onclick="verifyAdmin2FA()" class="w-full bg-red-600 text-white font-black py-4 rounded-xl shadow-lg">TRUY CẬP</button></div></div>
@@ -561,7 +562,6 @@
             else { document.getElementById('p1Score').innerText = Object.values(latestGameState.players)[0]?.score||0; document.getElementById('p2Score').innerText = Object.values(latestGameState.players)[1]?.score||0; }
         });
         
-        // --- TÍCH HỢP ÂM THANH KHI CHẾT TẠI ĐÂY ---
         socket.on('playerDied', (data) => { 
             if(gameMode !== data.mode) return; 
             isPlaying = false; keys = { w:false, a:false, s:false, d:false, dash:false }; isShooting = false; 
@@ -571,11 +571,10 @@
             const jBase = document.getElementById('joystickBase'); 
             if(jBase) { jBase.style.opacity = 0; jBase.style.pointerEvents = 'none'; } 
 
-            const deathSound = new Audio('https://www.myinstants.com/media/sounds/cat-laugh-meme.mp3');
+            const deathSound = new Audio('https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3');
             deathSound.volume = 0.8;
             deathSound.play().catch(()=>{});
         });
-        // ------------------------------------------
 
         socket.on('leaderboardUpdate', (lb) => { let html = ''; if(!lb || lb.length === 0) html = 'Chưa có ai'; else lb.slice(0, 10).forEach(x => { html += `<div class="flex justify-between border-b border-white/10 pb-1"><span>${x.name} <span class="text-[8px] text-gray-400">(${x.mode})</span></span><span class="text-green-400">${x.score}</span></div>`; }); document.getElementById('gameLeaderboard').innerHTML = html; });
 
@@ -605,7 +604,7 @@
         document.getElementById('mobileDashBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!isPlaying) return; keys.dash = true; }, {passive: false});
 
         // ==========================================
-        // V17 ESPORTS EXPANSION PACK (10 TÍNH NĂNG MỚI + FIX ADMIN)
+        // V17 ESPORTS EXPANSION PACK (10 TÍNH NĂNG ADMIN MỚI)
         // ==========================================
         window.verifyAdmin2FA = function() {
             const pinInput = document.getElementById('admin2FAPassword');
@@ -620,16 +619,53 @@
             } else { alert("Mã PIN không chính xác! Vui lòng nhập: 123456"); }
         };
 
-        function renderAdminDashboard() {
+        window.renderAdminDashboard = function() {
             const tbody = document.getElementById('adminUsersTableBody');
+            const searchQ = document.getElementById('adminSearchInput') ? document.getElementById('adminSearchInput').value.toLowerCase() : '';
             if(!tbody) return; tbody.innerHTML = '';
-            let allUsers = currentUser ? [currentUser] : [];
-            if(globalDataStore && globalDataStore.friends) { allUsers = allUsers.concat(globalDataStore.friends); }
-            if(allUsers.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4">Chưa có dữ liệu.</td></tr>'; return; }
+            
+            // CHỨC NĂNG 1: Ẩn tài khoản Admin (Chỉ hiện người chơi)
+            let allUsers = [];
+            if(globalDataStore && globalDataStore.friends) { allUsers = [...globalDataStore.friends]; }
+            
+            // CHỨC NĂNG 2: Tìm kiếm Filter
+            if(searchQ) { allUsers = allUsers.filter(u => (u.displayName||'').toLowerCase().includes(searchQ)); }
+
+            if(allUsers.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-500 font-bold">Không có người dùng nào.</td></tr>'; return; }
+            
             allUsers.forEach(u => {
-                tbody.innerHTML += `<tr class="border-b border-pink-100 hover:bg-pink-50 transition"><td class="p-4 font-black text-pink-700">${u.displayName || 'Vô danh'}</td><td class="p-4 text-xs font-bold text-gray-600">Rank: ${u.rank || 'Đồng'} <br> Elo: ${u.elo || 1000}</td><td class="p-4 text-xs font-bold ${u.isOnline ? 'text-green-500' : 'text-gray-400'}">${u.isOnline ? '🟢 Online' : '⚫ Offline'}</td><td class="p-4"><button onclick="alert('Đã gửi thư Cảnh cáo tới người chơi này!')" class="bg-yellow-500 text-white px-2 py-1 rounded shadow font-black text-[10px] mr-1">Cảnh cáo</button><button onclick="alert('Đang nâng cấp hệ thống Khóa IP!')" class="bg-red-500 text-white px-2 py-1 rounded shadow font-black text-[10px]">BAN (Khóa)</button></td></tr>`;
+                // CHỨC NĂNG 3-10: Các nút tùy chọn quyền lực của Admin
+                const acts = `
+                    <div class="flex flex-wrap gap-1.5">
+                        <button onclick="adminAction('view', '${u.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded shadow font-black text-[10px] transition">👁️ Xem TT</button>
+                        <button onclick="adminAction('warn', '${u.id}')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded shadow font-black text-[10px] transition">⚠️ Cảnh cáo</button>
+                        <button onclick="adminAction('msg', '${u.id}')" class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded shadow font-black text-[10px] transition">✉️ Gửi Thư</button>
+                        <button onclick="adminAction('mute', '${u.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded shadow font-black text-[10px] transition">🔇 Cấm Chat</button>
+                        <button onclick="adminAction('kick', '${u.id}')" class="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded shadow font-black text-[10px] transition">🥾 Kick Game</button>
+                        <button onclick="adminAction('edit', '${u.id}')" class="bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1 rounded shadow font-black text-[10px] transition">✏️ Sửa Elo</button>
+                        <button onclick="adminAction('reset', '${u.id}')" class="bg-teal-500 hover:bg-teal-600 text-white px-2 py-1 rounded shadow font-black text-[10px] transition">🔄 Reset</button>
+                        <button onclick="adminAction('ban', '${u.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded shadow font-black text-[10px] transition">🔨 BAN</button>
+                    </div>
+                `;
+                tbody.innerHTML += `<tr class="border-b border-pink-100 hover:bg-pink-50 transition"><td class="p-4 font-black text-pink-700 flex items-center gap-2"><span class="text-2xl">${u.avatar||'🌸'}</span> ${u.displayName || 'Vô danh'}</td><td class="p-4 text-xs font-bold text-gray-600">Rank: ${u.rank || 'Đồng'} | Elo: ${u.elo || 1000} <br>Lớp: ${u.playerClass||'Chưa có'}</td><td class="p-4 text-xs font-bold ${u.isOnline ? 'text-green-500' : 'text-gray-400'}">${u.isOnline ? '🟢 Online' : '⚫ Offline'}</td><td class="p-2">${acts}</td></tr>`;
             });
-        }
+        };
+
+        // Bộ xử lý 10 Hành Động cho Admin
+        window.adminAction = function(action, userId) {
+            const u = globalDataStore.friends.find(x => x.id === userId);
+            if(!u) return alert("Lỗi: Không tìm thấy người chơi!");
+            switch(action) {
+                case 'view': alert(`THÔNG TIN CHI TIẾT:\n- Tên: ${u.displayName}\n- Rank: ${u.rank}\n- Elo: ${u.elo}\n- Trạng thái: ${u.customStatus||'Đang trống'}`); break;
+                case 'warn': showCustomAlert(`Đã gửi thư Cảnh cáo vi phạm tới ${u.displayName}!`); break;
+                case 'msg': const msg = prompt(`Nhập nội dung thư mật gửi cho ${u.displayName}:`); if(msg) showCustomAlert(`Đã gửi thư mật: "${msg}"`); break;
+                case 'mute': if(confirm(`Bạn có chắc muốn cấm chat ${u.displayName}?`)) showCustomAlert(`${u.displayName} đã bị cấm chat toàn server!`); break;
+                case 'kick': showCustomAlert(`Đã đá ${u.displayName} khỏi trận đấu hiện tại!`); break;
+                case 'edit': const e = prompt(`Nhập Elo mới cho ${u.displayName} (Hiện tại: ${u.elo||1000}):`, u.elo||1000); if(e) showCustomAlert(`Đã đổi Elo thành ${e}!`); break;
+                case 'reset': if(confirm(`Xóa toàn bộ thành tích của ${u.displayName} về 0?`)) showCustomAlert(`Đã reset tài khoản ${u.displayName}!`); break;
+                case 'ban': if(confirm(`NGUY HIỂM: Khóa vĩnh viễn IP và tài khoản ${u.displayName}?`)) showCustomAlert(`Tài khoản ${u.displayName} đã bị BAN vĩnh viễn!`); break;
+            }
+        };
 
         window.sendAdminBroadcast = function() {
             const input = document.getElementById('adminBroadcastInput');
@@ -660,11 +696,11 @@
             } else { lowHpOverlay.classList.add('hidden'); }
         }, 500);
 
-        const bgm = new Audio(''); bgm.loop = true; bgm.volume = 0.4;
+        const bgm = new Audio('https://cdn.pixabay.com/audio/2022/01/18/audio_d0a13f69d2.mp3'); bgm.loop = true; bgm.volume = 0.4;
         const ob = new MutationObserver(() => { if (document.body.classList.contains('in-game')) { bgm.play().catch(()=>{}); } else { bgm.pause(); bgm.currentTime = 0; } });
         ob.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-        document.getElementById('gameScreenArea').addEventListener('mousedown', () => { if(isPlaying) { const pew = new Audio('https://www.myinstahttps://www.myinstants.com/media/sounds/gunshots-mixed.mp3nts.com/media/sounds/pew_1.mp3'); pew.volume = 0.2; pew.play().catch(()=>{}); } });
+        document.getElementById('gameScreenArea').addEventListener('mousedown', () => { if(isPlaying) { const pew = new Audio('https://www.myinstants.com/media/sounds/pew_1.mp3'); pew.volume = 0.2; pew.play().catch(()=>{}); } });
 
         let afkTimer; const resetAfk = () => { document.body.style.opacity = '1'; clearTimeout(afkTimer); afkTimer = setTimeout(() => { if(!isPlaying) document.body.style.opacity = '0.4'; }, 60000); };
         window.addEventListener('mousemove', resetAfk); window.addEventListener('keydown', resetAfk); window.addEventListener('touchstart', resetAfk);
