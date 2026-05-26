@@ -10,12 +10,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* CSS V1-V15 Kế thừa */
+        /* CSS V1-V17 Kế thừa và Nâng cấp */
         body { background: linear-gradient(135deg, #ffe3ec 0%, #ffb3c6 50%, #ff8fa3 100%); background-size: 400% 400%; animation: gradientBG 15s ease infinite; overflow-x: hidden; touch-action: none; overscroll-behavior: none; }
         @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         .sakura-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 182, 193, 0.5); box-shadow: 0 8px 32px 0 rgba(255, 105, 180, 0.15); transition: all 0.3s ease; }
-        .glass:hover { box-shadow: 0 12px 40px 0 rgba(255, 105, 180, 0.25); }
+        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255, 182, 193, 0.6); box-shadow: 0 10px 40px 0 rgba(255, 105, 180, 0.2); transition: all 0.3s ease; }
+        .glass:hover { box-shadow: 0 15px 50px 0 rgba(255, 105, 180, 0.3); }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255, 182, 193, 0.8); border-radius: 10px; }
         .tc:checked { right: 0; border-color: #ec4899; } .tc:checked + .tl { background-color: #ec4899; } .tc { right: 4px; z-index: 1; border-color: #e5e7eb; transition: all 0.3s; } .tl { width: 2.5rem; height: 1.25rem; background-color: #e5e7eb; border-radius: 9999px; transition: all 0.3s; }
         #mobileControls { display: none; } @media (max-width: 900px) { #mobileControls.active { display: block; } } #landscapeOverlay { display: none !important; } @media (max-width: 900px) and (orientation: portrait) { body.in-game #landscapeOverlay { display: flex !important; } }
@@ -26,10 +26,9 @@
         .reaction-picker { display: none; position: absolute; bottom: 100%; right: 0; background: white; padding: 5px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); gap: 5px; z-index: 20; }
         .reaction-picker.active { display: flex; } .reaction-btn { cursor: pointer; padding: 2px; transition: transform 0.2s; } .reaction-btn:hover { transform: scale(1.3); }
         
-        /* CSS V16 ĐỘT PHÁ (Voice, Stamina, Rank, Classes) */
+        /* CSS Rank & Vai trò */
         .rank-badge { font-weight: 900; padding: 2px 8px; border-radius: 12px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
         .rank-Đồng { background: #b45f06; color: white; } .rank-Bạc { background: #9ca3af; color: white; } .rank-Vàng { background: #fbbf24; color: #78350f; box-shadow: 0 0 5px #fbbf24; } .rank-Kim-Cương { background: #38bdf8; color: white; box-shadow: 0 0 8px #38bdf8; } .rank-Thách-Đấu { background: linear-gradient(45deg, #ef4444, #eab308); color: white; box-shadow: 0 0 10px #ef4444; }
-        
         .class-icon { font-size: 12px; background: rgba(0,0,0,0.1); padding: 3px 6px; border-radius: 6px; }
         .recording-pulse { animation: pulseRecord 1.5s infinite; }
         @keyframes pulseRecord { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
@@ -37,6 +36,12 @@
         #dashCooldownBar, #staminaBar { transition: width 0.1s linear; }
         .night-overlay { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, transparent 50px, rgba(0,0,15,0.95) 300px); pointer-events: none; z-index: 15; mix-blend-mode: multiply; display: none; }
         .night-mode-active .night-overlay { display: block; }
+        
+        /* Hiệu ứng Nút Game bóng bẩy */
+        .btn-game-mode { transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden; }
+        .btn-game-mode:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        .btn-game-mode::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent); transform: rotate(45deg); transition: 0.5s; opacity: 0; }
+        .btn-game-mode:hover::after { opacity: 1; left: 100%; top: 100%; }
     </style>
 </head>
 <body class="h-[100dvh] font-sans antialiased text-gray-800 relative select-none">
@@ -57,9 +62,9 @@
 
     <div id="pkInviteModal" class="fixed inset-0 bg-black/70 z-[9500] hidden items-center justify-center backdrop-blur-sm"><div class="glass p-8 rounded-[2rem] max-w-sm w-full mx-4 text-center transform scale-95 transition-transform duration-300" id="pkInviteBox"><div class="text-6xl mb-4 animate-bounce">⚔️</div><h3 class="text-2xl font-black text-red-600 mb-2 uppercase">Thách Đấu PK (Elo)!</h3><p class="text-sm text-gray-700 font-bold mb-6"><span id="pkChallengerName" class="text-pink-600 text-lg">Ai đó</span> muốn phân tài với bạn!</p><div class="flex space-x-3"><button onclick="respondPK(false)" class="flex-1 bg-gray-300 text-gray-800 font-black py-3.5 rounded-xl">TỪ CHỐI</button><button onclick="respondPK(true)" class="flex-1 bg-red-500 text-white font-black py-3.5 rounded-xl animate-pulse">CHẤP NHẬN</button></div></div></div>
 
-    <div id="classSelectionModal" class="fixed inset-0 bg-black/80 z-[9600] hidden items-center justify-center backdrop-blur-md"><div class="glass p-8 rounded-[2rem] max-w-2xl w-full mx-4 text-center shadow-2xl"><h2 class="text-3xl font-black text-pink-600 mb-2 uppercase">Chọn Lớp Nhân Vật</h2><p class="text-gray-500 font-bold mb-6 text-sm">Vai trò này sẽ quyết định lối chơi của bạn trong Game V16</p><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div onclick="selectPlayerClass('sniper')" class="bg-white/50 p-4 rounded-2xl border-2 border-transparent hover:border-pink-500 cursor-pointer transition transform hover:scale-105"><div class="text-5xl mb-2">🎯</div><h3 class="font-black text-red-600 text-lg">Xạ Thủ (Sniper)</h3><p class="text-xs text-gray-600 mt-2 font-bold">Máu: 80 | Tốc độ: Cao<br>Sát thương: Siêu Khủng<br>Nhược điểm: Bắn chậm</p></div><div onclick="selectPlayerClass('tanker')" class="bg-white/50 p-4 rounded-2xl border-2 border-transparent hover:border-pink-500 cursor-pointer transition transform hover:scale-105"><div class="text-5xl mb-2">🛡️</div><h3 class="font-black text-blue-600 text-lg">Đỡ Đòn (Tanker)</h3><p class="text-xs text-gray-600 mt-2 font-bold">Máu: 200 | Tốc độ: Chậm<br>Thể lực: Trâu bò<br>Ưu điểm: Sống dai</p></div><div onclick="selectPlayerClass('medic')" class="bg-white/50 p-4 rounded-2xl border-2 border-transparent hover:border-pink-500 cursor-pointer transition transform hover:scale-105"><div class="text-5xl mb-2">💉</div><h3 class="font-black text-green-600 text-lg">Cứu Thương (Medic)</h3><p class="text-xs text-gray-600 mt-2 font-bold">Máu: 120 | Tốc độ: Vừa<br>Nội tại: Tự hồi máu<br>Ưu điểm: Cân bằng</p></div></div><input type="hidden" id="selectedClassValue" value="none"><button onclick="confirmClassSelection()" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg hover:bg-pink-600 transition text-xl">XÁC NHẬN VAI TRÒ</button></div></div>
+    <div id="classSelectionModal" class="fixed inset-0 bg-black/80 z-[9600] hidden items-center justify-center backdrop-blur-md"><div class="glass p-8 rounded-[2rem] max-w-2xl w-full mx-4 text-center shadow-2xl"><h2 class="text-3xl font-black text-pink-600 mb-2 uppercase">Chọn Lớp Nhân Vật</h2><p class="text-gray-500 font-bold mb-6 text-sm">Vai trò này sẽ quyết định lối chơi của bạn</p><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div onclick="selectPlayerClass('sniper')" class="bg-white/50 p-4 rounded-2xl border-2 border-transparent hover:border-pink-500 cursor-pointer transition transform hover:scale-105"><div class="text-5xl mb-2">🎯</div><h3 class="font-black text-red-600 text-lg">Xạ Thủ (Sniper)</h3><p class="text-xs text-gray-600 mt-2 font-bold">Máu: 80 | Tốc độ: Cao<br>Sát thương: Siêu Khủng<br>Nhược điểm: Bắn chậm</p></div><div onclick="selectPlayerClass('tanker')" class="bg-white/50 p-4 rounded-2xl border-2 border-transparent hover:border-pink-500 cursor-pointer transition transform hover:scale-105"><div class="text-5xl mb-2">🛡️</div><h3 class="font-black text-blue-600 text-lg">Đỡ Đòn (Tanker)</h3><p class="text-xs text-gray-600 mt-2 font-bold">Máu: 200 | Tốc độ: Chậm<br>Thể lực: Trâu bò<br>Ưu điểm: Sống dai</p></div><div onclick="selectPlayerClass('medic')" class="bg-white/50 p-4 rounded-2xl border-2 border-transparent hover:border-pink-500 cursor-pointer transition transform hover:scale-105"><div class="text-5xl mb-2">💉</div><h3 class="font-black text-green-600 text-lg">Cứu Thương (Medic)</h3><p class="text-xs text-gray-600 mt-2 font-bold">Máu: 120 | Tốc độ: Vừa<br>Nội tại: Tự hồi máu<br>Ưu điểm: Cân bằng</p></div></div><input type="hidden" id="selectedClassValue" value="none"><button onclick="confirmClassSelection()" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg hover:bg-pink-600 transition text-xl">XÁC NHẬN VAI TRÒ</button></div></div>
 
-    <div id="authContainer" class="h-full flex items-center justify-center p-4 relative z-10 mt-6"><div id="loginCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl hover:scale-[1.02] transition-transform"><div class="text-center mb-8"><span class="text-6xl block mb-2">🌸</span><h2 class="text-3xl font-black text-pink-600">V16</h2><p class="text-xs font-bold text-gray-500">mtun 36</p></div><form id="loginForm" class="space-y-4"><div><input type="text" id="loginKey" placeholder="Tài khoản / Số điện thoại" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"></div><div><div class="relative"><input type="password" id="loginPassword" placeholder="Mật khẩu" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"><button type="button" onclick="togglePassView('loginPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button></div></div><div class="flex justify-between mt-2 px-1"><label class="flex items-center text-xs font-bold text-gray-600 cursor-pointer"><input type="checkbox" id="rememberMe" class="mr-2 w-4 h-4 rounded text-pink-500"> Ghi nhớ</label><button type="button" onclick="switchAuthView('forgot')" class="text-xs text-pink-600 font-bold hover:underline">Quên mật khẩu?</button></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-pink-600 transition text-lg mt-4">ĐĂNG NHẬP</button></form><p class="text-center text-sm mt-6 font-bold text-gray-600">Chưa có tài khoản? <button onclick="switchAuthView('register')" class="text-pink-600 font-black hover:underline">Đăng ký ngay</button></p></div>
+    <div id="authContainer" class="h-full flex items-center justify-center p-4 relative z-10 mt-6"><div id="loginCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl hover:scale-[1.02] transition-transform"><div class="text-center mb-8"><span class="text-6xl block mb-2">🌸</span><h2 class="text-3xl font-black text-pink-600">V16 ESPORTS</h2><p class="text-xs font-bold text-gray-500">Mượt mà & Cực nhẹ</p></div><form id="loginForm" class="space-y-4"><div><input type="text" id="loginKey" placeholder="Tài khoản / Số điện thoại" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"></div><div><div class="relative"><input type="password" id="loginPassword" placeholder="Mật khẩu" required class="w-full px-5 py-3.5 rounded-2xl border-2 border-pink-200 outline-none focus:border-pink-400 font-bold text-gray-700"><button type="button" onclick="togglePassView('loginPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold bg-white/80 px-2 py-1 rounded-md">Hiện</button></div></div><div class="flex justify-between mt-2 px-1"><label class="flex items-center text-xs font-bold text-gray-600 cursor-pointer"><input type="checkbox" id="rememberMe" class="mr-2 w-4 h-4 rounded text-pink-500"> Ghi nhớ</label><button type="button" onclick="switchAuthView('forgot')" class="text-xs text-pink-600 font-bold hover:underline">Quên mật khẩu?</button></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-pink-600 transition text-lg mt-4">ĐĂNG NHẬP</button></form><p class="text-center text-sm mt-6 font-bold text-gray-600">Chưa có tài khoản? <button onclick="switchAuthView('register')" class="text-pink-600 font-black hover:underline">Đăng ký ngay</button></p></div>
     <div id="registerCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl hidden"><h2 class="text-2xl font-black text-center text-pink-600 mb-6 uppercase">Tạo Tài Khoản</h2><form id="registerForm" class="space-y-4"><div><input type="text" id="regUsername" placeholder="Tên đăng nhập (>=4 ký tự)" minlength="4" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"></div><div><input type="tel" id="regPhone" placeholder="Số điện thoại" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"></div><div><div class="relative"><input type="password" id="regPassword" placeholder="Mật khẩu" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"><button type="button" onclick="togglePassView('regPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold">Hiện</button></div></div><div><div class="relative"><input type="password" id="regConfirmPassword" placeholder="Xác nhận mật khẩu" required class="w-full p-3.5 rounded-xl border-2 border-pink-200 outline-none font-bold"><button type="button" onclick="togglePassView('regConfirmPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-pink-500 font-bold">Hiện</button></div></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg mt-4">ĐĂNG KÝ</button></form><p class="text-center text-xs mt-5 font-bold text-gray-600"><button onclick="switchAuthView('login')" class="text-pink-600 hover:underline">Đăng nhập</button></p></div>
     <div id="setupProfileCard" class="glass w-full max-w-md p-8 rounded-[2rem] shadow-2xl hidden"><h2 class="text-2xl font-black text-center text-pink-600 mb-2">Tạo Biệt Danh</h2><form id="setupProfileForm" class="space-y-5"><div><input type="text" id="setupDisplayName" required minlength="2" placeholder="Tên hiển thị..." class="w-full p-4 rounded-xl border-2 border-pink-200 text-center font-black text-xl text-pink-600 outline-none"></div><button type="submit" class="w-full bg-pink-500 text-white font-black py-4 rounded-xl shadow-lg">TIẾP TỤC</button></form></div>
     </div>
@@ -80,10 +85,10 @@
                 </div>
                 
                 <div class="grid grid-cols-2 gap-2 mt-4">
-                    <button onclick="enterGameMode('ffa')" class="bg-red-500 text-white font-black py-2.5 rounded-xl shadow hover:bg-red-600 text-[10px] uppercase">🔥 Bắn Tự Do (Bo)</button>
-                    <button onclick="enterGameMode('zombie')" class="bg-green-600 text-white font-black py-2.5 rounded-xl shadow hover:bg-green-700 text-[10px] uppercase">🧟 Sinh Tồn</button>
-                    <button onclick="enterGameMode('dungeon')" class="bg-purple-600 text-white font-black py-2.5 rounded-xl shadow hover:bg-purple-700 text-[10px] uppercase">🐉 Săn Boss (PvE)</button>
-                    <button onclick="enterGameMode('safezone')" class="bg-blue-400 text-white font-black py-2.5 rounded-xl shadow hover:bg-blue-500 text-[10px] uppercase">🏕️ Khu An Toàn</button>
+                    <button onclick="enterGameMode('ffa')" class="btn-game-mode bg-gradient-to-r from-red-500 to-red-600 text-white font-black py-2.5 rounded-xl shadow-md text-[10px] uppercase border border-red-400">🔥 Sinh Tồn (Bo)</button>
+                    <button onclick="enterGameMode('zombie')" class="btn-game-mode bg-gradient-to-r from-green-500 to-green-600 text-white font-black py-2.5 rounded-xl shadow-md text-[10px] uppercase border border-green-400">🧟 Bắn Zombie</button>
+                    <button onclick="enterGameMode('dungeon')" class="btn-game-mode bg-gradient-to-r from-purple-500 to-purple-600 text-white font-black py-2.5 rounded-xl shadow-md text-[10px] uppercase border border-purple-400">🐉 Săn Boss (PvE)</button>
+                    <button onclick="enterGameMode('safezone')" class="btn-game-mode bg-gradient-to-r from-blue-400 to-blue-500 text-white font-black py-2.5 rounded-xl shadow-md text-[10px] uppercase border border-blue-300">🏕️ Khu An Toàn</button>
                 </div>
             </div>
 
@@ -126,8 +131,10 @@
                     </div>
                 </div>
                 <div id="chatActions" class="space-x-1.5 hidden flex items-center">
+                    <button id="btnInviteGame" onclick="inviteToGame()" class="px-2 py-1.5 bg-green-50 text-green-600 text-[10px] font-black rounded-lg hover:bg-green-100 animate-pulse hidden md:block">🎮 Mời Chơi</button>
+                    
                     <button onclick="openGallery()" class="px-2 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg hover:bg-blue-100 hidden md:block" title="Thư viện Media">🖼️</button>
-                    <button id="btnInvitePK" onclick="invitePK()" class="px-2 py-1.5 bg-red-50 text-red-600 text-[10px] font-black rounded-lg hover:bg-red-100 animate-pulse hidden md:block">⚔️ Rank Elo</button>
+                    <button id="btnInvitePK" onclick="invitePK()" class="px-2 py-1.5 bg-red-50 text-red-600 text-[10px] font-black rounded-lg hover:bg-red-100 hidden md:block">⚔️ Rank Elo</button>
                     <button id="btnArchiveToggle" onclick="actionToggleArchive()" class="px-2 py-1.5 bg-white text-[10px] font-black rounded-lg border">Lưu</button>
                     <button id="btnBlockToggle" onclick="actionToggleBlock()" class="px-2 py-1.5 bg-red-50 text-red-600 text-[10px] font-black rounded-lg">Chặn</button>
                 </div>
@@ -157,7 +164,7 @@
                             <button type="button" onclick="triggerMemeMode()" class="text-left px-3 py-2 hover:bg-pink-50 rounded text-xs font-bold text-pink-600">🤡 Chế độ Meme</button>
                             <button type="button" onclick="openPollMaker()" class="text-left px-3 py-2 hover:bg-pink-50 rounded text-xs font-bold text-gray-700">📊 Khảo sát</button>
                             <button type="button" onclick="openScheduler()" class="text-left px-3 py-2 hover:bg-pink-50 rounded text-xs font-bold text-gray-700">⏰ Hẹn giờ</button>
-                            <button type="button" onclick="invitePK()" class="md:hidden text-left px-3 py-2 hover:bg-red-50 rounded text-xs font-black text-red-600">⚔️ Thách đấu</button>
+                            <button type="button" onclick="inviteToGame()" class="md:hidden text-left px-3 py-2 hover:bg-green-50 rounded text-xs font-black text-green-600">🎮 Mời game</button>
                         </div>
                     </div>
                     
@@ -350,7 +357,7 @@
             }
         }
 
-        function updateChatHeader() { const f = globalDataStore.friends.find(x => x.id === activeChatUserId); if(!f) return; document.getElementById('chatTargetName').innerText = f.displayName; document.getElementById('chatTargetAvatar').innerText = f.avatar || '🌸'; document.getElementById('chatTargetStatus').innerText = f.customStatus || (f.isOnline ? 'Đang trực tuyến' : 'Ngoại tuyến'); document.getElementById('btnBlockToggle').innerText = f.isBlocked ? 'Mở Chặn 🔓' : 'Chặn 🚫'; document.getElementById('btnArchiveToggle').innerText = f.isArchived ? 'Bỏ Lưu 📥' : 'Lưu Trữ 📤'; if(f.displayName === 'Hệ Thống Admin' || !f.isOnline) document.getElementById('btnInvitePK').classList.add('hidden'); else document.getElementById('btnInvitePK').classList.remove('hidden'); if (f.isBlocked || f.isBlockedBy) { document.getElementById('normalChatUI').classList.add('hidden'); document.getElementById('blockedChatUI').classList.remove('hidden'); document.getElementById('blockedChatUI').classList.add('flex'); } else { document.getElementById('normalChatUI').classList.remove('hidden'); document.getElementById('normalChatUI').classList.add('flex'); document.getElementById('blockedChatUI').classList.add('hidden'); document.getElementById('messageInput').disabled = false; document.getElementById('btnSendMessage').disabled = false; } }
+        function updateChatHeader() { const f = globalDataStore.friends.find(x => x.id === activeChatUserId); if(!f) return; document.getElementById('chatTargetName').innerText = f.displayName; document.getElementById('chatTargetAvatar').innerText = f.avatar || '🌸'; document.getElementById('chatTargetStatus').innerText = f.customStatus || (f.isOnline ? 'Đang trực tuyến' : 'Ngoại tuyến'); document.getElementById('btnBlockToggle').innerText = f.isBlocked ? 'Mở Chặn 🔓' : 'Chặn 🚫'; document.getElementById('btnArchiveToggle').innerText = f.isArchived ? 'Bỏ Lưu 📥' : 'Lưu Trữ 📤'; if(f.displayName === 'Hệ Thống Admin' || !f.isOnline) { document.getElementById('btnInvitePK').classList.add('hidden'); document.getElementById('btnInviteGame').classList.add('hidden'); } else { document.getElementById('btnInvitePK').classList.remove('hidden'); document.getElementById('btnInviteGame').classList.remove('hidden'); } if (f.isBlocked || f.isBlockedBy) { document.getElementById('normalChatUI').classList.add('hidden'); document.getElementById('blockedChatUI').classList.remove('hidden'); document.getElementById('blockedChatUI').classList.add('flex'); } else { document.getElementById('normalChatUI').classList.remove('hidden'); document.getElementById('normalChatUI').classList.add('flex'); document.getElementById('blockedChatUI').classList.add('hidden'); document.getElementById('messageInput').disabled = false; document.getElementById('btnSendMessage').disabled = false; } }
         function viewTargetProfile() { const f = globalDataStore.friends.find(x => x.id === activeChatUserId); if(f) { document.getElementById('profName').innerText = f.displayName; document.getElementById('profAvatar').innerText = f.avatar||'🌸'; document.getElementById('profStatus').innerText = `"${f.customStatus||'Đang tận hưởng cuộc sống...'}"`; document.getElementById('profRank').innerText = f.rank||"Đồng"; document.getElementById('profElo').innerText = f.elo||1000; document.getElementById('profLevel').innerText = f.level||1; document.getElementById('profileModal').classList.remove('hidden'); document.getElementById('profileModal').classList.add('flex'); } }
         function actionToggleBlock() { socket.emit('toggleBlock', activeChatUserId); } function actionToggleArchive() { socket.emit('toggleArchive', activeChatUserId); }
 
@@ -413,6 +420,13 @@
 
         let typingT; document.getElementById('messageInput').addEventListener('input', () => { if(!activeChatUserId) return; socket.emit('typing', activeChatUserId); clearTimeout(typingT); typingT = setTimeout(() => socket.emit('stopTyping', activeChatUserId), 1500); });
         
+        // TÍNH NĂNG MỚI: MỜI BẠN BÈ VÀO GAME
+        function inviteToGame() {
+            if(!activeChatUserId) return;
+            socket.emit('sendMessage', {toUserId: activeChatUserId, text: "Ê vào bắn nhau không? Mình đang chờ ở sảnh nè! 🎮🔥"});
+            showCustomAlert("Đã gửi lời mời tham gia game!");
+        }
+
         let isMemeModeOn = false;
 
         document.getElementById('messageForm').addEventListener('submit', (e) => { 
@@ -424,14 +438,7 @@
                 socket.emit('sendMessage', {toUserId:activeChatUserId, text:t, replyTo: replyToMsgId}); 
                 if (isMemeModeOn) {
                     const randomSound = MEME_SOUNDS[Math.floor(Math.random() * MEME_SOUNDS.length)];
-                    setTimeout(() => {
-                        socket.emit('sendMessage', { 
-                            toUserId: activeChatUserId, 
-                            type: 'audio', 
-                            imgData: randomSound,
-                            replyTo: null 
-                        });
-                    }, 100);
+                    setTimeout(() => { socket.emit('sendMessage', { toUserId: activeChatUserId, type: 'audio', imgData: randomSound, replyTo: null }); }, 100);
                 }
             }
             i.value=''; socket.emit('stopTyping', activeChatUserId); cancelMsgContext(); 
@@ -443,42 +450,18 @@
         function openPollMaker() { showCustomAlert("Tính năng Khảo sát đang trong giai đoạn Beta!"); }
         function openGallery() { showCustomAlert("Tính năng Thư viện Media đang trong giai đoạn Beta!"); }
 
-        const MEME_SOUNDS = [
-            'https://www.myinstants.com/media/sounds/movie_1.mp3',
-            'https://www.myinstants.com/media/sounds/vine-boom.mp3',
-            'https://www.myinstants.com/media/sounds/quack_5.mp3',
-            'https://www.myinstants.com/media/sounds/metal-pipe-clang.mp3',
-            'https://www.myinstants.com/media/sounds/taco-bong.mp3'
-        ];
+        const MEME_SOUNDS = ['https://www.myinstants.com/media/sounds/movie_1.mp3', 'https://www.myinstants.com/media/sounds/vine-boom.mp3', 'https://www.myinstants.com/media/sounds/quack_5.mp3', 'https://www.myinstants.com/media/sounds/metal-pipe-clang.mp3', 'https://www.myinstants.com/media/sounds/taco-bong.mp3'];
 
         function triggerMemeMode() {
-            isMemeModeOn = !isMemeModeOn; 
-            const btn = document.querySelector('button[onclick="triggerMemeMode()"]');
-            if (btn) {
-                if (isMemeModeOn) {
-                    btn.innerHTML = 'ĐANG BẬT MEME';
-                    btn.style.backgroundColor = '#fbcfe8';
-                    btn.style.color = '#9d174d';
-                } else {
-                    btn.innerHTML = 'Chế độ Meme';
-                    btn.style.backgroundColor = 'transparent';
-                    btn.style.color = '#db2777'; 
-                }
-            }
-            if(isMemeModeOn) {
-                showCustomAlert("🔥 Đã BẬT: Từ giờ mỗi tin nhắn chữ sẽ bị gài thêm âm thanh!");
-            } else {
-                showCustomAlert("🛑 Đã TẮT chế độ Meme.");
-            }
+            isMemeModeOn = !isMemeModeOn; const btn = document.querySelector('button[onclick="triggerMemeMode()"]');
+            if (btn) { if (isMemeModeOn) { btn.innerHTML = 'ĐANG BẬT MEME'; btn.style.backgroundColor = '#fbcfe8'; btn.style.color = '#9d174d'; } else { btn.innerHTML = 'Chế độ Meme'; btn.style.backgroundColor = 'transparent'; btn.style.color = '#db2777'; } }
+            if(isMemeModeOn) { showCustomAlert("🔥 Đã BẬT: Từ giờ mỗi tin nhắn chữ sẽ bị gài thêm âm thanh!"); } else { showCustomAlert("🛑 Đã TẮT chế độ Meme."); }
         }
 
         async function startVoiceRecord() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream); audioChunks = [];
-                mediaRecorder.start(); recordSeconds = 0;
-                document.getElementById('voiceRecordingUI').classList.remove('hidden'); document.getElementById('voiceRecordingUI').classList.add('flex');
-                document.getElementById('normalChatUI').classList.add('hidden'); document.getElementById('normalChatUI').classList.remove('flex');
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); mediaRecorder = new MediaRecorder(stream); audioChunks = []; mediaRecorder.start(); recordSeconds = 0;
+                document.getElementById('voiceRecordingUI').classList.remove('hidden'); document.getElementById('voiceRecordingUI').classList.add('flex'); document.getElementById('normalChatUI').classList.add('hidden'); document.getElementById('normalChatUI').classList.remove('flex');
                 recordTimer = setInterval(() => { recordSeconds++; const m = String(Math.floor(recordSeconds/60)).padStart(2,'0'); const s = String(recordSeconds%60).padStart(2,'0'); document.getElementById('recordTimer').innerText = `${m}:${s}`; }, 1000);
                 mediaRecorder.addEventListener("dataavailable", e => { audioChunks.push(e.data); });
             } catch(e) { showCustomAlert("Không có quyền truy cập Micro!"); }
@@ -486,7 +469,7 @@
         function cancelVoiceRecord() { if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); clearInterval(recordTimer); document.getElementById('voiceRecordingUI').classList.add('hidden'); document.getElementById('voiceRecordingUI').classList.remove('flex'); document.getElementById('normalChatUI').classList.remove('hidden'); document.getElementById('normalChatUI').classList.add('flex'); document.getElementById('recordTimer').innerText = "00:00"; }
         function stopAndSendVoice() { if(!mediaRecorder) return; mediaRecorder.stop(); mediaRecorder.addEventListener("stop", () => { const aBlob = new Blob(audioChunks, { type: 'audio/webm' }); const r = new FileReader(); r.readAsDataURL(aBlob); r.onloadend = () => { socket.emit('sendMessage', { toUserId: activeChatUserId, type: 'audio', imgData: r.result, replyTo: replyToMsgId }); cancelVoiceRecord(); cancelMsgContext(); }; }); }
         // ==========================================
-        // GAME ENGINE V16 
+        // GAME ENGINE V16 (SIÊU TỐI ƯU RENDER MỚI)
         // ==========================================
         let gameMode = null, currentPKRoomId = null, isPlaying = false;
         let keys = { w: false, a: false, s: false, d: false, dash: false }; let aimAngle = 0, isShooting = false; let latestGameState = null; let inputEmitInterval = null;
@@ -497,8 +480,12 @@
         function toggleFullScreen() { if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(()=>{}); } else { if (document.exitFullscreen) document.exitFullscreen(); } }
         function resizeCanvas() { if(isPlaying) { SCREEN_W = container.clientWidth; SCREEN_H = container.clientHeight; gcvs.width = SCREEN_W; gcvs.height = SCREEN_H; ZOOM = (window.innerWidth < 768) ? 0.5 : 0.75; VIEW_W = SCREEN_W / ZOOM; VIEW_H = SCREEN_H / ZOOM; } } window.addEventListener('resize', resizeCanvas);
         function resetGameVars() { isPlaying = false; currentPKRoomId = null; gameMode = null; keys = { w:false, a:false, s:false, d:false, dash:false }; isShooting = false; latestGameState = null; if(inputEmitInterval) { clearInterval(inputEmitInterval); inputEmitInterval = null; } document.getElementById('gameOverOverlay').classList.add('hidden'); document.getElementById('gameOverOverlay').classList.remove('flex'); const jBase = document.getElementById('joystickBase'); if(jBase) { jBase.style.opacity = 0; jBase.style.pointerEvents = 'none'; } document.getElementById('killFeedBox').innerHTML=''; }
-        window.addEventListener('blur', () => { keys = { w:false, a:false, s:false, d:false, dash:false }; isShooting = false; });
         
+        // CHỐNG KẸT PHÍM HOÀN TOÀN KHI MẤT FOCUS
+        window.addEventListener('blur', () => { keys = { w:false, a:false, s:false, d:false, dash:false }; isShooting = false; });
+        window.addEventListener('mouseup', () => { isShooting = false; });
+        window.addEventListener('touchend', (e) => { if(e.touches.length === 0) { keys = {w:false, a:false, s:false, d:false, dash:false}; isShooting = false; const jBase = document.getElementById('joystickBase'); if(jBase) { jBase.style.opacity = 0; jBase.style.pointerEvents = 'none'; document.getElementById('joystickKnob').style.transform = `translate(-50%, -50%)`; } } });
+
         function toggleGameUI(show) { 
             if(show) { 
                 document.body.classList.add('in-game');
@@ -531,37 +518,50 @@
         socket.on('showPing', ({x, y}) => { const dx = x - camX, dy = y - camY; if(dx>0 && dx<VIEW_W && dy>0 && dy<VIEW_H) { const p = document.createElement('div'); p.className = 'absolute w-10 h-10 border-4 border-red-500 rounded-full animate-ping z-30 pointer-events-none'; p.style.left = `calc(50% - ${VIEW_W/2*ZOOM}px + ${dx*ZOOM}px - 20px)`; p.style.top = `calc(50% - ${VIEW_H/2*ZOOM}px + ${dy*ZOOM}px - 20px)`; document.getElementById('gameScreenArea').appendChild(p); setTimeout(()=>p.remove(), 2000); } });
         function sendMinimapPing(e) { if(!isPlaying) return; const rect = document.getElementById('miniMapContainer').getBoundingClientRect(); const mx = e.clientX - rect.left, my = e.clientY - rect.top; const scale = MAP_W / 200; socket.emit('minimapPing', {roomMode: gameMode, roomId: currentPKRoomId, x: mx * scale, y: my * scale}); }
 
+        // TÁCH RENDER VÀ SOCKET ĐỂ CHỐNG LAG
         socket.on('gameStateUpdate', (data) => {
-            if(gameMode !== data.mode) return; latestGameState = data.state; const myP = latestGameState.players[socket.id];
+            if(gameMode !== data.mode) return; latestGameState = data.state;
             
             if(data.isNight) document.getElementById('gameScreenArea').classList.add('night-mode-active');
             else document.getElementById('gameScreenArea').classList.remove('night-mode-active');
 
-            if(myP && myP.hp > 0) {
-                updateCamera(myP);
-                const stamPct = (myP.stamina / myP.maxStamina) * 100;
-                const hpPct = (myP.hp / myP.maxHp) * 100;
-                if(isTouchDevice) { document.getElementById('mobileStaminaBar').style.width = stamPct + '%'; }
-                else { document.getElementById('pcStaminaBar').style.width = stamPct + '%'; document.getElementById('pcHpBar').style.width = hpPct + '%'; }
-                
-                const now = Date.now(); let cdPercent = 100;
-                if(now < myP.nextDashTime) { cdPercent = ((myP.nextDashTime - now) / 1000) * 100; } else { cdPercent = 0; }
-                document.getElementById('dashCooldownOverlay').style.transform = `scaleY(${cdPercent/100})`;
-            }
-            gctx.clearRect(0,0,SCREEN_W,SCREEN_H); gctx.save(); gctx.scale(ZOOM, ZOOM); 
-            drawGrid(); drawItems(latestGameState.items); 
-            
-            if(data.mode === 'ffa') drawZone(latestGameState.zone);
-            if(data.mode === 'dungeon') drawBosses(latestGameState.bosses);
-            if(data.mode === 'zombie') drawZombies(latestGameState.zombies); 
-            
-            drawPlayers(latestGameState.players); drawLaserAim(latestGameState.players); drawBullets(latestGameState.bullets);
-            gctx.restore();
-            
-            if(data.mode !== 'pk') { if(myP) document.getElementById('myGameScoreDisplay').innerText = myP.score; drawMiniMap(latestGameState); } 
+            const myP = latestGameState.players[socket.id];
+            if(data.mode !== 'pk') { if(myP) document.getElementById('myGameScoreDisplay').innerText = myP.score; } 
             else { document.getElementById('p1Score').innerText = Object.values(latestGameState.players)[0]?.score||0; document.getElementById('p2Score').innerText = Object.values(latestGameState.players)[1]?.score||0; }
         });
         
+        // VÒNG LẶP RENDER ĐỘC LẬP MƯỢT MÀ
+        function renderGameLoop() {
+            if(isPlaying && latestGameState) {
+                const myP = latestGameState.players[socket.id];
+                if(myP && myP.hp > 0) {
+                    updateCamera(myP);
+                    const stamPct = (myP.stamina / myP.maxStamina) * 100; const hpPct = (myP.hp / myP.maxHp) * 100;
+                    if(isTouchDevice) { document.getElementById('mobileStaminaBar').style.width = stamPct + '%'; }
+                    else { document.getElementById('pcStaminaBar').style.width = stamPct + '%'; document.getElementById('pcHpBar').style.width = hpPct + '%'; }
+                    
+                    const now = Date.now(); let cdPercent = 100;
+                    if(now < myP.nextDashTime) { cdPercent = ((myP.nextDashTime - now) / 1000) * 100; } else { cdPercent = 0; }
+                    document.getElementById('dashCooldownOverlay').style.transform = `scaleY(${cdPercent/100})`;
+                }
+                
+                gctx.clearRect(0,0,SCREEN_W,SCREEN_H); gctx.save(); gctx.scale(ZOOM, ZOOM); 
+                drawGrid(); drawItems(latestGameState.items); 
+                
+                // CHỈ VẼ VÒNG BO Ở CHẾ ĐỘ SINH TỒN
+                if(gameMode === 'ffa') drawZone(latestGameState.zone);
+                if(gameMode === 'dungeon') drawBosses(latestGameState.bosses);
+                if(gameMode === 'zombie') drawZombies(latestGameState.zombies); 
+                
+                drawPlayers(latestGameState.players); drawLaserAim(latestGameState.players); drawBullets(latestGameState.bullets);
+                gctx.restore();
+                
+                drawMiniMap(latestGameState); 
+            }
+            requestAnimationFrame(renderGameLoop);
+        }
+        renderGameLoop(); // Khởi động Engine
+
         socket.on('playerDied', (data) => { 
             if(gameMode !== data.mode) return; 
             isPlaying = false; keys = { w:false, a:false, s:false, d:false, dash:false }; isShooting = false; 
@@ -570,10 +570,7 @@
             document.getElementById('gameOverOverlay').classList.add('flex'); 
             const jBase = document.getElementById('joystickBase'); 
             if(jBase) { jBase.style.opacity = 0; jBase.style.pointerEvents = 'none'; } 
-
-            const deathSound = new Audio('https://www.myinstants.com/media/sounds/cat-laugh-meme.mp3');
-            deathSound.volume = 0.8;
-            deathSound.play().catch(()=>{});
+            const deathSound = new Audio('https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3'); deathSound.volume = 0.8; deathSound.play().catch(()=>{});
         });
 
         socket.on('leaderboardUpdate', (lb) => { let html = ''; if(!lb || lb.length === 0) html = 'Chưa có ai'; else lb.slice(0, 10).forEach(x => { html += `<div class="flex justify-between border-b border-white/10 pb-1"><span>${x.name} <span class="text-[8px] text-gray-400">(${x.mode})</span></span><span class="text-green-400">${x.score}</span></div>`; }); document.getElementById('gameLeaderboard').innerHTML = html; });
@@ -586,7 +583,16 @@
         function drawPlayers(players) { Object.values(players).forEach(p => { if(p.hp <= 0) return; const dx = p.x - camX, dy = p.y - camY; if(p.shield) { gctx.beginPath(); gctx.arc(dx, dy, 28, 0, Math.PI*2); gctx.fillStyle = 'rgba(59, 130, 246, 0.4)'; gctx.fill(); gctx.lineWidth = 2; gctx.strokeStyle = '#3b82f6'; gctx.stroke(); } gctx.beginPath(); gctx.arc(dx, dy, 22, 0, Math.PI*2); gctx.fillStyle = p.color; gctx.fill(); gctx.lineWidth = 3; gctx.strokeStyle = p.baseSpeed > 6.5 ? '#fef08a' : 'rgba(255,255,255,0.9)'; gctx.stroke(); gctx.fillStyle = '#fff'; gctx.beginPath(); gctx.arc(dx-8, dy-5, 4, 0, Math.PI*2); gctx.arc(dx+8, dy-5, 4, 0, Math.PI*2); gctx.fill(); gctx.fillStyle = 'white'; gctx.font = 'bold 12px Arial'; gctx.textAlign = 'center'; gctx.fillText(`Lv.${p.level} ${p.name}`, dx, dy-32); gctx.font = '10px Arial'; gctx.fillStyle = '#fbbf24'; gctx.fillText(`[${p.rank}]`, dx, dy-45); gctx.fillStyle = 'red'; gctx.fillRect(dx-20, dy+30, 40, 5); gctx.fillStyle = '#22c55e'; gctx.fillRect(dx-20, dy+30, 40*(p.hp/p.maxHp), 5); }); }
         function drawLaserAim(players) { const myP = players[socket.id]; if(myP && myP.hp > 0 && isPlaying && gameMode !== 'safezone') { const dx = myP.x - camX, dy = myP.y - camY; gctx.beginPath(); gctx.moveTo(dx, dy); gctx.lineTo(dx + Math.cos(aimAngle)*1000, dy + Math.sin(aimAngle)*1000); gctx.lineWidth = 1.5; gctx.strokeStyle = 'rgba(255, 0, 0, 0.25)'; gctx.setLineDash([10, 10]); gctx.stroke(); gctx.setLineDash([]); } }
         function drawBullets(bullets) { bullets.forEach(b => { if(b.x < camX-20 || b.x > camX+VIEW_W+20 || b.y < camY-20 || b.y > camY+VIEW_H+20) return; const dx = b.x - camX, dy = b.y - camY; gctx.beginPath(); gctx.arc(dx, dy, 6, 0, Math.PI*2); gctx.fillStyle = '#fef08a'; gctx.fill(); gctx.shadowBlur = 15; gctx.shadowColor = '#eab308'; }); gctx.shadowBlur = 0; }
-        function drawMiniMap(state) { mapCtx.clearRect(0,0,200,200); mapCtx.fillStyle = 'rgba(0,0,0,0.5)'; mapCtx.fillRect(0,0,200,200); const scale = 200 / MAP_W; if(state.zone) { mapCtx.fillStyle = 'rgba(239, 68, 68, 0.3)'; mapCtx.beginPath(); mapCtx.arc(state.zone.x * scale, state.zone.y * scale, state.zone.radius * scale, 0, Math.PI*2); mapCtx.fill(); } if(state.bosses) { mapCtx.fillStyle = '#7f1d1d'; state.bosses.forEach(b => { mapCtx.fillRect(b.x * scale - 3, b.y * scale - 3, 6, 6); }); } if(state.players) { Object.values(state.players).forEach(p => { if (p.hp <= 0) return; mapCtx.fillStyle = p.id === socket.id ? '#3b82f6' : '#ef4444'; mapCtx.fillRect(p.x * scale - 2, p.y * scale - 2, 4, 4); }); } mapCtx.strokeStyle = 'rgba(255,255,255,0.4)'; mapCtx.lineWidth = 1; mapCtx.strokeRect(camX * scale, camY * scale, VIEW_W * scale, VIEW_H * scale); }
+        
+        function drawMiniMap(state) { 
+            mapCtx.clearRect(0,0,200,200); mapCtx.fillStyle = 'rgba(0,0,0,0.5)'; mapCtx.fillRect(0,0,200,200); const scale = 200 / MAP_W; 
+            // KHẮC PHỤC CHỈ VẼ BO Ở MINIMAP CHẾ ĐỘ FFA
+            if(gameMode === 'ffa' && state.zone) { mapCtx.fillStyle = 'rgba(239, 68, 68, 0.3)'; mapCtx.beginPath(); mapCtx.arc(state.zone.x * scale, state.zone.y * scale, state.zone.radius * scale, 0, Math.PI*2); mapCtx.fill(); } 
+            
+            if(state.bosses) { mapCtx.fillStyle = '#7f1d1d'; state.bosses.forEach(b => { mapCtx.fillRect(b.x * scale - 3, b.y * scale - 3, 6, 6); }); } 
+            if(state.players) { Object.values(state.players).forEach(p => { if (p.hp <= 0) return; mapCtx.fillStyle = p.id === socket.id ? '#3b82f6' : '#ef4444'; mapCtx.fillRect(p.x * scale - 2, p.y * scale - 2, 4, 4); }); } 
+            mapCtx.strokeStyle = 'rgba(255,255,255,0.4)'; mapCtx.lineWidth = 1; mapCtx.strokeRect(camX * scale, camY * scale, VIEW_W * scale, VIEW_H * scale); 
+        }
 
         window.addEventListener('keydown', (e) => { if(isPlaying) { if(['w','a','s','d'].includes(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; if(e.key === 'Shift') keys.dash = true; } }); 
         window.addEventListener('keyup', (e) => { if(isPlaying && ['w','a','s','d'].includes(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
@@ -604,7 +610,7 @@
         document.getElementById('mobileDashBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!isPlaying) return; keys.dash = true; }, {passive: false});
 
         // ==========================================
-        // V17 ESPORTS EXPANSION PACK (10 TÍNH NĂNG ADMIN MỚI)
+        // V17 ESPORTS EXPANSION PACK (ADMIN MỚI KHÔNG MẤT CHỨC NĂNG CŨ)
         // ==========================================
         window.verifyAdmin2FA = function() {
             const pinInput = document.getElementById('admin2FAPassword');
@@ -624,17 +630,11 @@
             const searchQ = document.getElementById('adminSearchInput') ? document.getElementById('adminSearchInput').value.toLowerCase() : '';
             if(!tbody) return; tbody.innerHTML = '';
             
-            // CHỨC NĂNG 1: Ẩn tài khoản Admin (Chỉ hiện người chơi)
-            let allUsers = [];
-            if(globalDataStore && globalDataStore.friends) { allUsers = [...globalDataStore.friends]; }
-            
-            // CHỨC NĂNG 2: Tìm kiếm Filter
+            let allUsers = []; if(globalDataStore && globalDataStore.friends) { allUsers = [...globalDataStore.friends]; }
             if(searchQ) { allUsers = allUsers.filter(u => (u.displayName||'').toLowerCase().includes(searchQ)); }
-
             if(allUsers.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-500 font-bold">Không có người dùng nào.</td></tr>'; return; }
             
             allUsers.forEach(u => {
-                // CHỨC NĂNG 3-10: Các nút tùy chọn quyền lực của Admin
                 const acts = `
                     <div class="flex flex-wrap gap-1.5">
                         <button onclick="adminAction('view', '${u.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded shadow font-black text-[10px] transition">👁️ Xem TT</button>
@@ -651,7 +651,6 @@
             });
         };
 
-        // Bộ xử lý 10 Hành Động cho Admin
         window.adminAction = function(action, userId) {
             const u = globalDataStore.friends.find(x => x.id === userId);
             if(!u) return alert("Lỗi: Không tìm thấy người chơi!");
@@ -696,11 +695,11 @@
             } else { lowHpOverlay.classList.add('hidden'); }
         }, 500);
 
-        const bgm = new Audio(''); bgm.loop = true; bgm.volume = 0.4;
+        const bgm = new Audio('https://cdn.pixabay.com/audio/2022/01/18/audio_d0a13f69d2.mp3'); bgm.loop = true; bgm.volume = 0.4;
         const ob = new MutationObserver(() => { if (document.body.classList.contains('in-game')) { bgm.play().catch(()=>{}); } else { bgm.pause(); bgm.currentTime = 0; } });
         ob.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-        document.getElementById('gameScreenArea').addEventListener('mousedown', () => { if(isPlaying) { const pew = new Audio('https://www.myinstants.com/media/sounds/gunshots-mixed.mp3'); pew.volume = 0.2; pew.play().catch(()=>{}); } });
+        document.getElementById('gameScreenArea').addEventListener('mousedown', () => { if(isPlaying) { const pew = new Audio('https://www.myinstants.com/media/sounds/pew_1.mp3'); pew.volume = 0.2; pew.play().catch(()=>{}); } });
 
         let afkTimer; const resetAfk = () => { document.body.style.opacity = '1'; clearTimeout(afkTimer); afkTimer = setTimeout(() => { if(!isPlaying) document.body.style.opacity = '0.4'; }, 60000); };
         window.addEventListener('mousemove', resetAfk); window.addEventListener('keydown', resetAfk); window.addEventListener('touchstart', resetAfk);
