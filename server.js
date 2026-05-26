@@ -9,22 +9,18 @@ const bcrypt = require('bcryptjs');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 5e7 });
+const io = new Server(server, { maxHttpBufferSize: 5e7 }); // 50MB
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'database.json');
 
 // ==========================================
-// BỘ CHỐNG CRASH SERVER CHO RENDER/HOSTING
+// 0. BỘ CHỐNG CRASH SERVER TUYỆT ĐỐI (ANTI-CRASH)
 // ==========================================
-process.on('uncaughtException', (err) => {
-    console.error('🔥 LỖI NGHIÊM TRỌNG (Nhưng server không bị sập):', err);
-});
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('🔥 LỖI PROMISE (Nhưng server không bị sập):', reason);
-});
+process.on('uncaughtException', (err) => { console.error('🔥 LỖI HỆ THỐNG (Đã được chặn):', err); });
+process.on('unhandledRejection', (reason, promise) => { console.error('🔥 LỖI PROMISE (Đã được chặn):', reason); });
 
 // ==========================================
-// 1. DATABASE
+// 1. DATABASE ENGINE
 // ==========================================
 function initDatabase() {
     if (!fs.existsSync(DB_FILE)) {
@@ -39,24 +35,28 @@ function initDatabase() {
                 avatar: "🛡️", customStatus: "Đang giám sát Server",
                 playerClass: "sniper", elo: 9999, rank: "Thách Đấu", level: 100, gameScore: 999999
             }],
-            messages: [],
-            friendRequests: [],
-            pinnedMessages: {},
-            leaderboard: []
+            messages: [], friendRequests: [], pinnedMessages: {}, leaderboard: []
         };
         fs.writeFileSync(DB_FILE, JSON.stringify(initialDB, null, 2));
     }
 }
 initDatabase();
-function readDB() { try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); } catch(e) { return { users: [], messages: [] }; } }
-function writeDB(data) { try { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2)); } catch(e) {} }
+
+function readDB() { 
+    try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); } 
+    catch (e) { console.error("Lỗi đọc DB:", e); return { users: [], messages: [] }; } 
+}
+function writeDB(data) { 
+    try { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2)); } 
+    catch (e) { console.error("Lỗi ghi DB:", e); } 
+}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 const sessionMiddleware = session({
-    secret: 'cherry-esports-v19-super-secret',
+    secret: 'cherry-esports-v20-super-secret',
     resave: false, saveUninitialized: false,
     store: new MemoryStore({ checkPeriod: 86400000 }),
     cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }
@@ -65,39 +65,44 @@ app.use(sessionMiddleware);
 io.engine.use(sessionMiddleware);
 
 // ==========================================
-// 2. API XÁC THỰC
+// 2. API XÁC THỰC & TÀI KHOẢN
 // ==========================================
 app.post('/api/register', (req, res) => {
-    const { username, phone, password, confirmPassword } = req.body;
-    if (password !== confirmPassword) return res.status(400).json({ msg: "Mật khẩu không khớp!" });
-    const db = readDB();
-    if (db.users.find(u => u.username === username || u.phone === phone)) return res.status(400).json({ msg: "Tài khoản/SĐT đã tồn tại!" });
-    
-    const newUser = {
-        id: 'user_' + Date.now(), username, phone, password: bcrypt.hashSync(password, 10),
-        displayName: "", role: "user",
-        isBanned: false, banUntil: null, isMuted: false, muteUntil: null,
-        friends: [], blocks: [], archives: [],
-        gender: "secret", dob: "", bio: "", avatar: "🌸", customStatus: "",
-        playerClass: "none", elo: 1000, rank: "Đồng", level: 1, gameScore: 0
-    };
-    db.users.push(newUser); writeDB(db);
-    req.session.userId = newUser.id;
-    res.json({ success: true, msg: "Đăng ký thành công!" });
+    try {
+        const { username, phone, password, confirmPassword } = req.body;
+        if (password !== confirmPassword) return res.status(400).json({ msg: "Mật khẩu không khớp!" });
+        const db = readDB();
+        if (db.users.find(u => u.username === username || u.phone === phone)) return res.status(400).json({ msg: "Tài khoản/SĐT đã tồn tại!" });
+        
+        const newUser = {
+            id: 'user_' + Date.now(), username, phone, password: bcrypt.hashSync(password, 10),
+            displayName: "", role: "user", isBanned: false, banUntil: null, isMuted: false, muteUntil: null,
+            friends: [], blocks: [], archives: [],
+            gender: "secret", dob: "", bio: "", avatar: "🌸", customStatus: "",
+            playerClass: "none", elo: 1000, rank: "Đồng", level: 1, gameScore: 0
+        };
+        db.users.push(newUser); writeDB(db);
+        req.session.userId = newUser.id;
+        res.json({ success: true, msg: "Đăng ký thành công!" });
+    } catch (err) { res.status(500).json({ msg: "Lỗi Server!" }); }
 });
 
 app.post('/api/login', (req, res) => {
-    const { loginKey, password } = req.body;
-    const db = readDB();
-    const user = db.users.find(u => u.username === loginKey || u.phone === loginKey);
-    if (!user || !bcrypt.compareSync(password, user.password)) return res.status(400).json({ msg: "Sai thông tin đăng nhập!" });
-    if (user.isBanned) {
-        if (!user.banUntil || new Date(user.banUntil) > new Date()) return res.status(403).json({ msg: "Tài khoản bị khóa!" });
-        else { user.isBanned = false; writeDB(db); }
-    }
-    req.session.userId = user.id;
-    if (!user.displayName) return res.json({ success: true, needProfile: true });
-    res.json({ success: true, user: { id: user.id, username: user.username, displayName: user.displayName, role: user.role } });
+    try {
+        const { loginKey, password } = req.body;
+        const db = readDB();
+        const user = db.users.find(u => u.username === loginKey || u.phone === loginKey);
+        if (!user || !bcrypt.compareSync(password, user.password)) return res.status(400).json({ msg: "Sai thông tin đăng nhập!" });
+        
+        if (user.isBanned) {
+            if (!user.banUntil || new Date(user.banUntil) > new Date()) return res.status(403).json({ msg: "Tài khoản bị khóa!" });
+            else { user.isBanned = false; writeDB(db); }
+        }
+        
+        req.session.userId = user.id;
+        if (!user.displayName) return res.json({ success: true, needProfile: true });
+        res.json({ success: true, user: { id: user.id, username: user.username, displayName: user.displayName, role: user.role } });
+    } catch (err) { res.status(500).json({ msg: "Lỗi Server!" }); }
 });
 
 app.post('/api/setup-profile', (req, res) => {
@@ -118,7 +123,7 @@ app.get('/api/me', (req, res) => {
 app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ success: true }); });
 
 // ==========================================
-// 3. GAME ENGINE STATE 
+// 3. GAME ENGINE STATE (V20) - CHỐNG LAG
 // ==========================================
 const MAP_W = 3000, MAP_H = 3000;
 let gameRooms = {
@@ -134,9 +139,8 @@ function spawnItems(room, count) {
 }
 ['ffa', 'zombie', 'dungeon', 'safezone'].forEach(m => spawnItems(gameRooms[m], 50));
 function calculateRank(elo) { if(elo < 1200) return "Đồng"; if(elo < 1500) return "Bạc"; if(elo < 2000) return "Vàng"; if(elo < 2500) return "Kim Cương"; return "Thách Đấu"; }
-
 // ==========================================
-// 4. SOCKET.IO LOGIC
+// 4. SOCKET.IO ENGINE (CHAT & GAME LOGIC)
 // ==========================================
 io.on('connection', (socket) => {
     const userId = socket.request.session?.userId;
@@ -145,65 +149,79 @@ io.on('connection', (socket) => {
     onlineUsers[userId] = socket.id;
     io.emit('userStatusChange', { userId, status: 'online' });
 
-    // HÀM TẢI DỮ LIỆU
+    // --- A. HỆ THỐNG DỮ LIỆU & CHAT ---
     socket.on('initData', () => {
-        const db = readDB(); if(!db) return;
-        const currentUser = db.users.find(u => u.id === userId);
-        if(!currentUser) return;
-        const friendsList = db.users.filter(u => u.id !== userId);
-        socket.emit('userDataPackage', { 
-            friends: friendsList.map(u => ({ 
-                id: u.id, username: u.username, displayName: u.displayName || u.username, role: u.role, 
-                isOnline: !!onlineUsers[u.id] && !u.invisible, 
-                isBlocked: currentUser.blocks ? currentUser.blocks.includes(u.id) : false, 
-                isArchived: currentUser.archives ? currentUser.archives.includes(u.id) : false, 
-                avatar: u.avatar, customStatus: u.customStatus, 
-                level: u.level || 1, elo: u.elo || 1000, rank: u.rank || 'Đồng', playerClass: u.playerClass
-            })), 
-            messages: db.messages.filter(m => m.from === userId || m.to === userId), 
-            pinnedMessages: db.pinnedMessages || {}
-        });
+        try {
+            const db = readDB(); if(!db) return;
+            const currentUser = db.users.find(u => u.id === userId);
+            if(!currentUser) return;
+            
+            const friendsList = db.users.filter(u => u.id !== userId);
+            socket.emit('userDataPackage', { 
+                friends: friendsList.map(u => ({ 
+                    id: u.id, username: u.username, displayName: u.displayName || u.username, role: u.role, 
+                    isOnline: !!onlineUsers[u.id] && !u.invisible, 
+                    isBlocked: currentUser.blocks ? currentUser.blocks.includes(u.id) : false, 
+                    isArchived: currentUser.archives ? currentUser.archives.includes(u.id) : false, 
+                    avatar: u.avatar, customStatus: u.customStatus, 
+                    level: u.level || 1, elo: u.elo || 1000, rank: u.rank || 'Đồng', playerClass: u.playerClass
+                })), 
+                messages: db.messages.filter(m => m.from === userId || m.to === userId), 
+                pinnedMessages: db.pinnedMessages || {}
+            });
+        } catch (e) { console.error("Lỗi initData:", e); }
     });
 
-    // CHAT
     socket.on('sendMessage', (data) => {
-        const db = readDB(); const u = db.users.find(x => x.id === userId);
-        if (u.isMuted && (!u.muteUntil || new Date(u.muteUntil) > new Date())) return socket.emit('actionError', "Bị cấm chat!");
-        const msg = { id: 'msg_'+Date.now(), from: userId, to: data.toUserId, text: data.text||"", type: data.type||'text', imgData: data.imgData, location: data.location, replyTo: data.replyTo, timestamp: Date.now(), isEdited: false, isRecalled: false, readBy: [] };
-        db.messages.push(msg); writeDB(db);
-        socket.emit('receiveMessage', msg);
-        if (onlineUsers[data.toUserId]) io.to(onlineUsers[data.toUserId]).emit('receiveMessage', msg);
+        try {
+            const db = readDB(); const u = db.users.find(x => x.id === userId);
+            if (u.isMuted && (!u.muteUntil || new Date(u.muteUntil) > new Date())) return socket.emit('actionError', "Bị cấm chat!");
+            const msg = { id: 'msg_'+Date.now(), from: userId, to: data.toUserId, text: data.text||"", type: data.type||'text', imgData: data.imgData, location: data.location, replyTo: data.replyTo, timestamp: Date.now(), isEdited: false, isRecalled: false, readBy: [] };
+            db.messages.push(msg); writeDB(db);
+            socket.emit('receiveMessage', msg);
+            if (onlineUsers[data.toUserId]) io.to(onlineUsers[data.toUserId]).emit('receiveMessage', msg);
+        } catch (e) { console.error("Lỗi gửi tin nhắn:", e); }
     });
     
-    socket.on('recallMessage', (msgId) => { const db = readDB(); const m = db.messages.find(x => x.id === msgId && x.from === userId); if(m) { m.isRecalled = true; m.text = ""; m.imgData = null; writeDB(db); io.emit('messageUpdated', m); } });
-    socket.on('editMessage', ({msgId, newText}) => { const db = readDB(); const m = db.messages.find(x => x.id === msgId && x.from === userId); if(m && !m.isRecalled && m.type==='text') { m.text = newText; m.isEdited = true; writeDB(db); io.emit('messageUpdated', m); } });
+    socket.on('recallMessage', (msgId) => { 
+        try { const db = readDB(); const m = db.messages.find(x => x.id === msgId && x.from === userId); if(m) { m.isRecalled = true; m.text = ""; m.imgData = null; writeDB(db); io.emit('messageUpdated', m); } } catch(e){} 
+    });
+    
+    socket.on('editMessage', ({msgId, newText}) => { 
+        try { const db = readDB(); const m = db.messages.find(x => x.id === msgId && x.from === userId); if(m && !m.isRecalled && m.type==='text') { m.text = newText; m.isEdited = true; writeDB(db); io.emit('messageUpdated', m); } } catch(e){} 
+    });
+    
     socket.on('updateMyProfile', (data, callback) => {
-        const db = readDB(); const idx = db.users.findIndex(u => u.id === userId);
-        if(idx !== -1) { 
-            db.users[idx] = { ...db.users[idx], displayName: data.displayName, customStatus: data.customStatus, invisible: data.invisible, avatar: data.avatar, playerClass: data.playerClass };
-            writeDB(db); io.emit('userStatusChange', { userId, status: data.invisible ? 'offline' : 'online' }); 
-            socket.emit('initData'); if(callback) callback({success:true, msg: "Đã lưu!"}); 
-        }
+        try {
+            const db = readDB(); const idx = db.users.findIndex(u => u.id === userId);
+            if(idx !== -1) { 
+                db.users[idx] = { ...db.users[idx], displayName: data.displayName, customStatus: data.customStatus, invisible: data.invisible, avatar: data.avatar, playerClass: data.playerClass };
+                writeDB(db); io.emit('userStatusChange', { userId, status: data.invisible ? 'offline' : 'online' }); 
+                socket.emit('initData'); if(callback) callback({success:true, msg: "Đã lưu!"}); 
+            }
+        } catch(e){}
     });
 
-    // GAME
+    // --- B. HỆ THỐNG GAME ESPORTS (V20) ---
     let myCurrentRoom = null;
     socket.on('joinGame', (mode) => {
-        if(!gameRooms[mode]) return;
-        myCurrentRoom = mode; socket.join(mode);
-        const db = readDB(); const u = db.users.find(x => x.id === userId);
-        let hp = 100, speed = 8, dmg = 10;
-        if(u.playerClass === 'tanker') { hp = 250; speed = 5; dmg = 8; }
-        else if(u.playerClass === 'sniper') { hp = 80; speed = 9; dmg = 45; }
-        else if(u.playerClass === 'medic') { hp = 120; speed = 7; dmg = 15; }
-        gameRooms[mode].players[socket.id] = {
-            id: socket.id, userId: userId, name: u.displayName, avatar: u.avatar,
-            x: Math.random() * (MAP_W - 400) + 200, y: Math.random() * (MAP_H - 400) + 200,
-            hp: hp, maxHp: hp, stamina: 100, maxStamina: 100, nextDashTime: 0,
-            baseSpeed: speed, damage: dmg, playerClass: u.playerClass,
-            score: 0, color: (u.playerClass === 'sniper' ? '#ef4444' : (u.playerClass === 'tanker' ? '#3b82f6' : '#22c55e')),
-            invulnerableUntil: Date.now() + 3000
-        };
+        try {
+            if(!gameRooms[mode]) return;
+            myCurrentRoom = mode; socket.join(mode);
+            const db = readDB(); const u = db.users.find(x => x.id === userId);
+            let hp = 100, speed = 8, dmg = 10;
+            if(u.playerClass === 'tanker') { hp = 250; speed = 5; dmg = 8; }
+            else if(u.playerClass === 'sniper') { hp = 80; speed = 9; dmg = 45; }
+            else if(u.playerClass === 'medic') { hp = 120; speed = 7; dmg = 15; }
+            gameRooms[mode].players[socket.id] = {
+                id: socket.id, userId: userId, name: u.displayName, avatar: u.avatar,
+                x: Math.random() * (MAP_W - 400) + 200, y: Math.random() * (MAP_H - 400) + 200,
+                hp: hp, maxHp: hp, stamina: 100, maxStamina: 100, nextDashTime: 0,
+                baseSpeed: speed, damage: dmg, playerClass: u.playerClass,
+                score: 0, color: (u.playerClass === 'sniper' ? '#ef4444' : (u.playerClass === 'tanker' ? '#3b82f6' : '#22c55e')),
+                invulnerableUntil: Date.now() + 3000
+            };
+        } catch(e) { console.error(e); }
     });
 
     socket.on('respawnGame', (mode) => {
@@ -216,105 +234,115 @@ io.on('connection', (socket) => {
     });
 
     socket.on('gameChat', (data) => {
-        const db = readDB(); const u = db.users.find(x => x.id === userId);
-        if(myCurrentRoom && u) io.to(myCurrentRoom).emit('gameChatReceive', `<b>[${u.displayName}]</b>: ${data.msg}`);
+        try {
+            const db = readDB(); const u = db.users.find(x => x.id === userId);
+            if(myCurrentRoom && u) io.to(myCurrentRoom).emit('gameChatReceive', `<b>[${u.displayName}]</b>: ${data.msg}`);
+        } catch(e){}
     });
 
     socket.on('leaveGame', (mode) => { if(gameRooms[mode] && gameRooms[mode].players[socket.id]) { delete gameRooms[mode].players[socket.id]; socket.leave(mode); myCurrentRoom = null; } });
 
     socket.on('gameInput', (data) => {
-        if(!myCurrentRoom || !gameRooms[myCurrentRoom]) return;
-        const p = gameRooms[myCurrentRoom].players[socket.id];
-        if(!p || p.hp <= 0) return;
+        try {
+            if(!myCurrentRoom || !gameRooms[myCurrentRoom]) return;
+            const p = gameRooms[myCurrentRoom].players[socket.id];
+            if(!p || p.hp <= 0) return;
 
-        let spd = p.baseSpeed;
-        if (data.keys.dash && p.stamina >= 30 && Date.now() > p.nextDashTime) { spd *= 3; p.stamina -= 30; p.nextDashTime = Date.now() + 2000; }
-        else if (p.stamina < p.maxStamina) { p.stamina += 0.5; }
+            let spd = p.baseSpeed;
+            if (data.keys.dash && p.stamina >= 30 && Date.now() > p.nextDashTime) { spd *= 3; p.stamina -= 30; p.nextDashTime = Date.now() + 2000; }
+            else if (p.stamina < p.maxStamina) { p.stamina += 0.5; }
 
-        if (data.keys.w && p.y > 20) p.y -= spd;
-        if (data.keys.s && p.y < MAP_H - 20) p.y += spd;
-        if (data.keys.a && p.x > 20) p.x -= spd;
-        if (data.keys.d && p.x < MAP_W - 20) p.x += spd;
+            if (data.keys.w && p.y > 20) p.y -= spd;
+            if (data.keys.s && p.y < MAP_H - 20) p.y += spd;
+            if (data.keys.a && p.x > 20) p.x -= spd;
+            if (data.keys.d && p.x < MAP_W - 20) p.x += spd;
 
-        if (p.playerClass === 'medic' && p.hp < p.maxHp) p.hp += 0.05;
+            if (p.playerClass === 'medic' && p.hp < p.maxHp) p.hp += 0.05;
 
-        if (data.isShooting && (!p.lastShot || Date.now() - p.lastShot > (p.playerClass==='sniper'?1000:200))) {
-            gameRooms[myCurrentRoom].bullets.push({ id: Math.random(), ownerId: socket.id, ownerName: p.name, x: p.x, y: p.y, angle: data.aimAngle, speed: 20, damage: p.damage, range: (p.playerClass==='sniper'?1000:500), traveled: 0 });
-            p.lastShot = Date.now();
-        }
+            if (data.isShooting && (!p.lastShot || Date.now() - p.lastShot > (p.playerClass==='sniper'?1000:200))) {
+                gameRooms[myCurrentRoom].bullets.push({ id: Math.random(), ownerId: socket.id, ownerName: p.name, x: p.x, y: p.y, angle: data.aimAngle, speed: 20, damage: p.damage, range: (p.playerClass==='sniper'?1000:500), traveled: 0 });
+                p.lastShot = Date.now();
+            }
+        } catch(e){}
     });
 
     socket.on('disconnect', () => {
-        if(myCurrentRoom && gameRooms[myCurrentRoom]) delete gameRooms[myCurrentRoom].players[socket.id];
-        delete onlineUsers[userId]; io.emit('userStatusChange', { userId, status: 'offline' });
+        try {
+            if(myCurrentRoom && gameRooms[myCurrentRoom]) delete gameRooms[myCurrentRoom].players[socket.id];
+            delete onlineUsers[userId]; io.emit('userStatusChange', { userId, status: 'offline' });
+        } catch(e){}
     });
 });
 
-// GAME LOOP ENGINE
+// ==========================================
+// 5. GAME LOOP ENGINE (Giảm từ 50ms xuống 30ms cho siêu mượt)
+// ==========================================
 setInterval(() => {
-    const now = Date.now();
-    ['ffa', 'zombie', 'dungeon', 'safezone'].forEach(mode => {
-        const room = gameRooms[mode];
-        if (Object.keys(room.players).length === 0) return;
+    try {
+        const now = Date.now();
+        ['ffa', 'zombie', 'dungeon', 'safezone'].forEach(mode => {
+            const room = gameRooms[mode];
+            if (Object.keys(room.players).length === 0) return;
 
-        if (mode === 'ffa') {
-            room.zone.radius -= 0.5;
-            if (room.zone.radius < 50) room.zone.radius = 2500;
-        }
-
-        Object.values(room.players).forEach(p => {
-            if (p.hp <= 0) return;
-
-            // ĐÃ FIX LỖI CRASH: Thay socketId bằng p.id
-            if (mode === 'ffa' && now > p.invulnerableUntil) {
-                const distToCenter = Math.hypot(p.x - room.zone.x, p.y - room.zone.y);
-                if (distToCenter > room.zone.radius) {
-                    p.hp -= 2;
-                    if (p.hp <= 0) io.to(p.id).emit('playerDied', { mode, score: p.score });
-                }
+            if (mode === 'ffa') {
+                room.zone.radius -= 0.5;
+                if (room.zone.radius < 50) room.zone.radius = 2500;
             }
 
-            room.items = room.items.filter(item => {
-                const dist = Math.hypot(p.x - item.x, p.y - item.y);
-                if (dist < 30) { p.hp = Math.min(p.maxHp, p.hp + 50); p.score += 10; return false; }
-                return true;
+            Object.values(room.players).forEach(p => {
+                if (p.hp <= 0) return;
+                
+                if (mode === 'ffa' && now > p.invulnerableUntil) {
+                    const distToCenter = Math.hypot(p.x - room.zone.x, p.y - room.zone.y);
+                    if (distToCenter > room.zone.radius) {
+                        p.hp -= 2;
+                        if (p.hp <= 0) io.to(p.id).emit('playerDied', { mode, score: p.score });
+                    }
+                }
+
+                room.items = room.items.filter(item => {
+                    const dist = Math.hypot(p.x - item.x, p.y - item.y);
+                    if (dist < 30) { p.hp = Math.min(p.maxHp, p.hp + 50); p.score += 10; return false; }
+                    return true;
+                });
+                if(room.items.length < 20) spawnItems(room, 5);
             });
-            if(room.items.length < 20) spawnItems(room, 5);
-        });
 
-        room.bullets = room.bullets.filter(b => {
-            b.x += Math.cos(b.angle) * b.speed; b.y += Math.sin(b.angle) * b.speed; b.traveled += b.speed;
-            if (b.traveled > b.range || b.x < 0 || b.x > MAP_W || b.y < 0 || b.y > MAP_H) return false;
+            room.bullets = room.bullets.filter(b => {
+                b.x += Math.cos(b.angle) * b.speed; b.y += Math.sin(b.angle) * b.speed; b.traveled += b.speed;
+                if (b.traveled > b.range || b.x < 0 || b.x > MAP_W || b.y < 0 || b.y > MAP_H) return false;
 
-            let hit = false;
-            if (mode !== 'safezone') {
-                Object.values(room.players).forEach(target => {
-                    if (target.id !== b.ownerId && target.hp > 0 && now > target.invulnerableUntil) {
-                        const dist = Math.hypot(b.x - target.x, b.y - target.y);
-                        if (dist < 25) {
-                            target.hp -= b.damage; hit = true;
-                            if (target.hp <= 0) {
-                                if (room.players[b.ownerId]) {
-                                    room.players[b.ownerId].score += 100;
-                                    io.to(target.id).emit('playerDied', { mode, score: target.score });
-                                    
-                                    const db = readDB(); 
-                                    const winner = db.users.find(u => u.id === room.players[b.ownerId].userId);
-                                    if(winner) { winner.elo += 5; winner.gameScore += 100; winner.rank = calculateRank(winner.elo); writeDB(db); }
+                let hit = false;
+                if (mode !== 'safezone') {
+                    Object.values(room.players).forEach(target => {
+                        if (target.id !== b.ownerId && target.hp > 0 && now > target.invulnerableUntil) {
+                            const dist = Math.hypot(b.x - target.x, b.y - target.y);
+                            if (dist < 25) {
+                                target.hp -= b.damage; hit = true;
+                                if (target.hp <= 0) {
+                                    if (room.players[b.ownerId]) {
+                                        room.players[b.ownerId].score += 100;
+                                        io.to(target.id).emit('playerDied', { mode, score: target.score });
+                                        try {
+                                            const db = readDB(); 
+                                            const winner = db.users.find(u => u.id === room.players[b.ownerId].userId);
+                                            if(winner) { winner.elo += 5; winner.gameScore += 100; winner.rank = calculateRank(winner.elo); writeDB(db); }
+                                        } catch(e){}
+                                    }
                                 }
                             }
                         }
-                    }
-                });
-            }
-            return !hit;
+                    });
+                }
+                return !hit;
+            });
+
+            io.to(mode).emit('gameStateUpdate', { mode, state: room });
         });
+    } catch(e) { console.error("Lỗi Game Loop:", e); }
+}, 30); 
 
-        io.to(mode).emit('gameStateUpdate', { mode, state: room });
-    });
-}, 50);
-
-// Lắng nghe trên mọi Interface mạng (Bắt buộc cho Render/Railway)
+// BINDING ALL IPs (0.0.0.0) CHỐNG CRASH TRÊN HOSTING CLOUD
 server.listen(PORT, '0.0.0.0', () => { 
-    console.log(`🚀 V19 Server running on port ${PORT}`); 
+    console.log(`🚀 V20 Server running on port ${PORT}`); 
 });
